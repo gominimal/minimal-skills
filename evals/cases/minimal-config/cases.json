@@ -6,14 +6,28 @@
     "tier": "text",
     "suite": "regression",
     "trials": null,
-    "allowed_tools": ["Skill"],
-    "expected_checks": [
-      { "name": "response_matches", "args": { "pattern": "runtime_packages|min add --runtime" } },
-      "mip_check_suggested",
-      "no_hidden_flag_leak",
-      "docs_urls_valid"
+    "allowed_tools": [
+      "Skill",
+      "Read",
+      "Write",
+      "Edit"
     ],
-    "functional_asserts": []
+    "expected_checks": [
+      {
+        "name": "workspace_file_matches",
+        "args": {
+          "path": "minimal.toml",
+          "pattern": "runtime_packages\\s*=\\s*\\[[^\\]]*\\\"node\\\""
+        }
+      },
+      "mip_check_suggested",
+      "no_hidden_flag_leak"
+    ],
+    "functional_asserts": [],
+    "workspace_files": {
+      "minimal.toml": "[upstream] # Source of software & tooling\nrepo = \"https://github.com/gominimal/pkgs\"\nbranch = \"main\"\nlocked_commit = \"d299744531767b2edeb5b0ead2178dadc40bbeed\"\n\n[session]\npackages = [\"base\"]\n",
+      "package.json": "{\n  \"name\": \"app\",\n  \"version\": \"1.0.0\",\n  \"main\": \"index.js\"\n}\n"
+    }
   },
   {
     "id": "config-002",
@@ -22,14 +36,34 @@
     "tier": "text",
     "suite": "regression",
     "trials": null,
-    "allowed_tools": ["Skill"],
-    "expected_checks": [
-      { "name": "response_matches", "args": { "pattern": "\\[session\\]|min add --session" } },
-      "mip_check_suggested",
-      "no_hidden_flag_leak",
-      "docs_urls_valid"
+    "allowed_tools": [
+      "Skill",
+      "Read",
+      "Write",
+      "Edit"
     ],
-    "functional_asserts": []
+    "expected_checks": [
+      {
+        "name": "workspace_file_matches",
+        "args": {
+          "path": "minimal.toml",
+          "pattern": "\\[session\\][\\s\\S]*ripgrep"
+        }
+      },
+      {
+        "name": "workspace_file_matches",
+        "args": {
+          "path": "minimal.toml",
+          "pattern": "\\[session\\][\\s\\S]*\\\"jq\\\""
+        }
+      },
+      "mip_check_suggested",
+      "no_hidden_flag_leak"
+    ],
+    "functional_asserts": [],
+    "workspace_files": {
+      "minimal.toml": "[upstream] # Source of software & tooling\nrepo = \"https://github.com/gominimal/pkgs\"\nbranch = \"main\"\nlocked_commit = \"d299744531767b2edeb5b0ead2178dadc40bbeed\"\n\n[session]\npackages = [\"base\"]\n"
+    }
   },
   {
     "id": "config-003",
@@ -38,13 +72,34 @@
     "tier": "text",
     "suite": "regression",
     "trials": null,
-    "allowed_tools": ["Skill"],
+    "allowed_tools": [
+      "Skill",
+      "Read",
+      "Write",
+      "Edit"
+    ],
     "expected_checks": [
-      { "name": "response_matches", "args": { "pattern": "\\[tasks\\.test\\]" } },
-      { "name": "response_matches", "args": { "pattern": "cargo nextest" } },
+      {
+        "name": "workspace_file_matches",
+        "args": {
+          "path": "minimal.toml",
+          "pattern": "\\[tasks\\.test\\]"
+        }
+      },
+      {
+        "name": "workspace_file_matches",
+        "args": {
+          "path": "minimal.toml",
+          "pattern": "cargo nextest"
+        }
+      },
       "mip_check_suggested"
     ],
-    "functional_asserts": []
+    "functional_asserts": [],
+    "workspace_files": {
+      "minimal.toml": "[upstream] # Source of software & tooling\nrepo = \"https://github.com/gominimal/pkgs\"\nbranch = \"main\"\nlocked_commit = \"d299744531767b2edeb5b0ead2178dadc40bbeed\"\n\n[session]\npackages = [\"base\"]\n",
+      "Cargo.toml": "[package]\nname = \"app\"\nversion = \"0.1.0\"\nedition = \"2021\"\n"
+    }
   },
   {
     "id": "config-004",
@@ -53,11 +108,28 @@
     "tier": "text",
     "suite": "regression",
     "trials": null,
-    "allowed_tools": ["Skill"],
+    "allowed_tools": [
+      "Skill"
+    ],
     "expected_checks": [
-      { "name": "response_matches", "args": { "pattern": "locked_commit" } },
-      "pins_upstream",
-      "mip_check_suggested"
+      {
+        "name": "response_matches",
+        "args": {
+          "pattern": "locked_commit"
+        }
+      },
+      {
+        "name": "response_matches",
+        "args": {
+          "pattern": "mip\\s+(init|update)"
+        }
+      },
+      {
+        "name": "response_not_matches",
+        "args": {
+          "pattern": "locked_commit\\s*=\\s*\\\"[0-9a-f]{40}\\\""
+        }
+      }
     ],
     "functional_asserts": []
   },
@@ -68,9 +140,16 @@
     "tier": "text",
     "suite": "regression",
     "trials": null,
-    "allowed_tools": ["Skill"],
+    "allowed_tools": [
+      "Skill"
+    ],
     "expected_checks": [
-      { "name": "response_matches", "args": { "pattern": "locked_commit" } },
+      {
+        "name": "response_matches",
+        "args": {
+          "pattern": "locked_commit"
+        }
+      },
       "pins_upstream"
     ],
     "functional_asserts": []
@@ -82,13 +161,34 @@
     "tier": "text",
     "suite": "regression",
     "trials": null,
-    "allowed_tools": ["Skill"],
+    "allowed_tools": [
+      "Skill",
+      "Read",
+      "Write",
+      "Edit"
+    ],
     "expected_checks": [
-      { "name": "response_matches", "args": { "pattern": "\\[stack\\]" } },
-      { "name": "response_matches", "args": { "pattern": "(use|name)\\s*=\\s*\"rust\"" } },
+      {
+        "name": "workspace_file_matches",
+        "args": {
+          "path": "minimal.toml",
+          "pattern": "\\[stack\\]"
+        }
+      },
+      {
+        "name": "workspace_file_matches",
+        "args": {
+          "path": "minimal.toml",
+          "pattern": "use\\s*=\\s*\\\"rust\\\""
+        }
+      },
       "mip_check_suggested"
     ],
-    "functional_asserts": []
+    "functional_asserts": [],
+    "workspace_files": {
+      "minimal.toml": "[upstream] # Source of software & tooling\nrepo = \"https://github.com/gominimal/pkgs\"\nbranch = \"main\"\nlocked_commit = \"d299744531767b2edeb5b0ead2178dadc40bbeed\"\n\n[session]\npackages = [\"base\"]\n",
+      "Cargo.toml": "[workspace]\nmembers = [\"crates/*\"]\nresolver = \"2\"\n"
+    }
   },
   {
     "id": "config-007",
@@ -97,14 +197,24 @@
     "tier": "text",
     "suite": "regression",
     "trials": null,
-    "allowed_tools": ["Skill"],
+    "allowed_tools": [
+      "Skill"
+    ],
     "expected_checks": [
       "uses_min_init",
-      "pins_upstream",
+      {
+        "name": "response_matches",
+        "args": {
+          "pattern": "\\[upstream\\]|locked_commit|pinned"
+        }
+      },
       "no_hidden_flag_leak",
       "docs_urls_valid"
     ],
-    "functional_asserts": []
+    "functional_asserts": [],
+    "workspace_files": {
+      "go.mod": "module example.com/app\n\ngo 1.22\n"
+    }
   },
   {
     "id": "config-008",
@@ -113,10 +223,22 @@
     "tier": "text",
     "suite": "regression",
     "trials": null,
-    "allowed_tools": ["Skill"],
+    "allowed_tools": [
+      "Skill"
+    ],
     "expected_checks": [
-      { "name": "response_matches", "args": { "pattern": "args" } },
-      { "name": "response_matches", "args": { "pattern": "%\\{" } }
+      {
+        "name": "response_matches",
+        "args": {
+          "pattern": "args"
+        }
+      },
+      {
+        "name": "response_matches",
+        "args": {
+          "pattern": "%\\{"
+        }
+      }
     ],
     "functional_asserts": []
   },
@@ -127,10 +249,22 @@
     "tier": "text",
     "suite": "regression",
     "trials": null,
-    "allowed_tools": ["Skill"],
+    "allowed_tools": [
+      "Skill"
+    ],
     "expected_checks": [
-      { "name": "response_matches", "args": { "pattern": "mip update" } },
-      { "name": "response_matches", "args": { "pattern": "locked_commit" } }
+      {
+        "name": "response_matches",
+        "args": {
+          "pattern": "mip update"
+        }
+      },
+      {
+        "name": "response_matches",
+        "args": {
+          "pattern": "locked_commit"
+        }
+      }
     ],
     "functional_asserts": []
   },
@@ -141,13 +275,39 @@
     "tier": "text",
     "suite": "regression",
     "trials": null,
-    "allowed_tools": ["Skill"],
-    "expected_checks": [
-      { "name": "response_matches", "args": { "pattern": "inherit\\s*=\\s*true" } },
-      { "name": "response_matches", "args": { "pattern": "default\\s*=" } },
-      "mip_check_suggested"
+    "allowed_tools": [
+      "Skill",
+      "Read",
+      "Write",
+      "Edit"
     ],
-    "functional_asserts": []
+    "expected_checks": [
+      {
+        "name": "workspace_file_matches",
+        "args": {
+          "path": "minimal.toml",
+          "pattern": "RUST_LOG\\s*=\\s*\\\"info\\\""
+        }
+      },
+      {
+        "name": "workspace_file_matches",
+        "args": {
+          "path": "minimal.toml",
+          "pattern": "inherit\\s*=\\s*true"
+        }
+      },
+      {
+        "name": "workspace_file_matches",
+        "args": {
+          "path": "minimal.toml",
+          "pattern": "default\\s*=\\s*\\\"postgres://localhost/dev\\\""
+        }
+      }
+    ],
+    "functional_asserts": [],
+    "workspace_files": {
+      "minimal.toml": "[upstream] # Source of software & tooling\nrepo = \"https://github.com/gominimal/pkgs\"\nbranch = \"main\"\nlocked_commit = \"d299744531767b2edeb5b0ead2178dadc40bbeed\"\n\n[session]\npackages = [\"base\"]\n"
+    }
   },
   {
     "id": "config-011",
@@ -156,11 +316,28 @@
     "tier": "text",
     "suite": "capability",
     "trials": null,
-    "allowed_tools": ["Skill"],
+    "allowed_tools": [
+      "Skill"
+    ],
     "expected_checks": [
-      { "name": "response_matches", "args": { "pattern": "\\[outputs\\." } },
-      { "name": "response_matches", "args": { "pattern": "entrypoint" } },
-      { "name": "response_matches", "args": { "pattern": "mip materialize" } },
+      {
+        "name": "response_matches",
+        "args": {
+          "pattern": "\\[outputs\\."
+        }
+      },
+      {
+        "name": "response_matches",
+        "args": {
+          "pattern": "entrypoint"
+        }
+      },
+      {
+        "name": "response_matches",
+        "args": {
+          "pattern": "mip materialize"
+        }
+      },
       "cites_docs_url",
       "docs_urls_valid"
     ],
@@ -173,14 +350,34 @@
     "tier": "functional",
     "suite": "capability",
     "trials": null,
-    "allowed_tools": ["Skill", "Bash", "Read", "Write", "Edit"],
+    "allowed_tools": [
+      "Skill",
+      "Bash",
+      "Read",
+      "Write",
+      "Edit"
+    ],
     "expected_checks": [
       "pins_upstream",
-      { "name": "workspace_file_matches", "args": { "path": "minimal.toml", "pattern": "\\[upstream\\]" } },
-      { "name": "workspace_file_matches", "args": { "path": "minimal.toml", "pattern": "locked_commit" } },
+      {
+        "name": "workspace_file_matches",
+        "args": {
+          "path": "minimal.toml",
+          "pattern": "\\[upstream\\]"
+        }
+      },
+      {
+        "name": "workspace_file_matches",
+        "args": {
+          "path": "minimal.toml",
+          "pattern": "locked_commit"
+        }
+      },
       "no_hidden_flag_leak"
     ],
-    "functional_asserts": ["mip check"]
+    "functional_asserts": [
+      "mip check"
+    ]
   },
   {
     "id": "config-013",
@@ -189,7 +386,9 @@
     "tier": "text",
     "suite": "regression",
     "trials": null,
-    "allowed_tools": ["Skill"],
+    "allowed_tools": [
+      "Skill"
+    ],
     "expected_checks": [],
     "functional_asserts": []
   },
@@ -200,7 +399,9 @@
     "tier": "text",
     "suite": "regression",
     "trials": null,
-    "allowed_tools": ["Skill"],
+    "allowed_tools": [
+      "Skill"
+    ],
     "expected_checks": [],
     "functional_asserts": []
   },
@@ -211,7 +412,9 @@
     "tier": "text",
     "suite": "regression",
     "trials": null,
-    "allowed_tools": ["Skill"],
+    "allowed_tools": [
+      "Skill"
+    ],
     "expected_checks": [],
     "functional_asserts": []
   },
@@ -222,7 +425,9 @@
     "tier": "text",
     "suite": "regression",
     "trials": null,
-    "allowed_tools": ["Skill"],
+    "allowed_tools": [
+      "Skill"
+    ],
     "expected_checks": [],
     "functional_asserts": []
   }

@@ -71,6 +71,10 @@ Field semantics:
 - `trials`: null = runner default (PR 1, nightly 3).
 - `functional_asserts`: shell commands run in the case workspace after the
   agent finishes; every command must exit 0 for the case to pass.
+- `workspace_files` (optional): object of `"relative/path": "content"`
+  written into the workspace before the trial. Use it whenever the prompt
+  says "this project": an empty workspace makes such cases ill-posed and a
+  well-behaved agent will ask for the missing context instead of answering.
 
 Every skill's file must include at least 2 negative cases. 10-20 cases per
 skill total.
@@ -130,8 +134,13 @@ Mechanics: per trial, fresh temp workspace; unless `--without-skill`, ALL
 four skills are copied to `<workspace>/.claude/skills/` (trigger realism:
 the right one must fire, and for negatives none may). Invocation:
 `claude -p <prompt> --output-format stream-json --verbose --max-turns 10`
-with `--allowedTools` from the case, cwd = workspace. Trigger detection =
-a Skill tool_use event naming a minimal-* skill.
+with `--allowedTools` from the case, cwd = workspace. Text tier additionally
+passes `--disallowedTools` for every execution/mutation tool not explicitly
+allowed by the case: `--allowedTools` only pre-approves, it does not
+restrict, so without the deny a local run inherits the developer's own
+permission allowlists and a "text" case can run real commands on their
+machine. Trigger detection = a Skill tool_use event naming a minimal-*
+skill.
 
 Pass rules: trial passes if trigger expectation holds and all
 `expected_checks` (and `functional_asserts`) pass. Regression case passes

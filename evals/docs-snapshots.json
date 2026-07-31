@@ -1,0 +1,12 @@
+{
+  "https://minimal.dev/docs/concepts/profiles": "da6c3347de710aab307b86553492abcf25f7217206d2e7bcb61b48ca22f5456a",
+  "https://minimal.dev/docs/concepts/sessions": "2c0257f0f25f6cdae166b96e52776c01c36c1567ab84bcb4cab99f2ef6de392e",
+  "https://minimal.dev/docs/reference/build-specs": "71f4f89307f722bec257b9446bf374697438279fd1b14a1ea633fda6e6e9070b",
+  "https://minimal.dev/docs/reference/cli-min": "bed9129cb00cb8f3bc69a318d0db68f95e18326ab202c6f7f631c820831abf56",
+  "https://minimal.dev/docs/reference/cli-mip": "7421309269da03c7c2af3406c1f55430f14957b7a476e9c02e36a13e1fd30a1c",
+  "https://minimal.dev/docs/reference/loadouts": "576f4ca9bde4aa67051ee54e9e1e0280977e7d09ab9fcbce1c9fa024c7a296d6",
+  "https://minimal.dev/docs/reference/minimal-dot-toml": "970f228c486228edcc0e7749a9d61960ba751483f7682e0f0e47d6b269ecc79e",
+  "https://minimal.dev/docs/reference/sandbox-operations": "d8df82d24e1f87991933d86d98eb35fa1520cb9253ed2fc0ca56d00f483637d1",
+  "https://minimal.dev/docs/reference/stack-specs": "3792849ce08c23e7908370730f443d55851598917399080e0e92a907b923af57",
+  "https://minimal.dev/docs/reference/tasks": "59e5297882f5364139093c3ef2f8167061c0e84af92932307762ff2fa83aad6d"
+}

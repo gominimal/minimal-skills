@@ -32,6 +32,11 @@ DEFAULT_ALLOWED_TOOLS = {
 }
 TRIAL_TIMEOUT_S = {"text": 300, "functional": 900}
 ASSERT_TIMEOUT_S = 30
+# Execution/mutation tools hard-denied in text tier (see run_trial).
+EXEC_TOOLS = [
+    "Bash", "Write", "Edit", "NotebookEdit", "WebFetch", "WebSearch",
+    "Task", "Agent", "KillShell", "BashOutput",
+]
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -42,6 +47,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--skill", action="append", metavar="NAME",
         help="skill to run cases for; repeatable; default all skills",
+    )
+    parser.add_argument(
+        "--id", action="append", metavar="CASE_ID", dest="ids",
+        help="case id to run; repeatable; default all cases",
     )
     parser.add_argument(
         "--tier", choices=["text", "functional", "all"], default="text",
@@ -138,6 +147,7 @@ def discover_cases(args: argparse.Namespace) -> list[tuple[str, dict]]:
         skill = case_file.parent.name
         if args.skill and skill not in args.skill:
             continue
+        # --id filters inside the per-file loop below.
         try:
             cases = json.loads(case_file.read_text())
         except (OSError, json.JSONDecodeError) as exc:
@@ -151,6 +161,8 @@ def discover_cases(args: argparse.Namespace) -> list[tuple[str, dict]]:
                 continue
             tier = case.get("tier", "text")
             suite = case.get("suite", "regression")
+            if args.ids and case.get("id") not in args.ids:
+                continue
             if args.tier != "all" and tier != args.tier:
                 continue
             if args.suite != "all" and suite != args.suite:
@@ -325,6 +337,11 @@ def run_trial(
     try:
         if not args.without_skill:
             install_skills(workspace)
+        # Seed declared project files so "this project" prompts are coherent.
+        for rel_path, content in (case.get("workspace_files") or {}).items():
+            target = workspace / rel_path
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(content)
         command = [
             "claude", "-p", case["prompt"],
             "--output-format", "stream-json",
@@ -333,6 +350,16 @@ def run_trial(
             "--model", args.model,
             "--allowedTools", ",".join(allowed_tools),
         ]
+        # --allowedTools only pre-APPROVES; it does not restrict. Without an
+        # explicit deny, a local run inherits the developer's own permission
+        # allowlists and a "text" case can execute real commands on their
+        # machine (observed: a text case activated a live session on the
+        # host). Text tier hard-denies every execution/mutation tool the case
+        # did not explicitly allow.
+        if tier == "text":
+            denied = [t for t in EXEC_TOOLS if t not in allowed_tools]
+            if denied:
+                command += ["--disallowedTools", ",".join(denied)]
         if args.skip_permissions:
             command.append("--dangerously-skip-permissions")
         try:
@@ -352,6 +379,10 @@ def run_trial(
             record["trigger_ok"] = skill in triggered
         else:
             record["trigger_ok"] = not triggered
+
+        # Excerpt kept in the report so failed checks can be diagnosed from
+        # evidence instead of re-running the trial.
+        record["response_excerpt"] = response_text[:4000]
 
         result = checks_mod.Result(
             response_text=response_text, events=events, workspace=workspace

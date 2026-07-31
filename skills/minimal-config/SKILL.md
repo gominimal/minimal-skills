@@ -1,6 +1,6 @@
 ---
 name: minimal-config
-description: "Use when writing or editing minimal.toml, adding a package or tool to a project's Minimal config, defining or fixing a Minimal task, pinning or updating the [upstream], resolving mip check errors, or choosing a stack, profile, or output for the Minimal build system. Do not use for session lifecycle or CLI usage (minimal-setup owns those), generic TOML syntax questions, or other manifests such as Cargo.toml or package.json."
+description: "Use when writing or editing minimal.toml, adding a package or tool to a project's Minimal config, defining or fixing a Minimal task, pinning or updating the [upstream], resolving mip check errors, explaining unexpected minimal.toml changes such as rewritten locked_commit lines, or choosing a stack, profile, or output for the Minimal build system. Do not use for session lifecycle or CLI usage (minimal-setup owns those), generic TOML syntax questions, or other manifests such as Cargo.toml or package.json."
 ---
 
 # Authoring and validating minimal.toml
@@ -29,6 +29,9 @@ https://minimal.dev/docs/reference/minimal-dot-toml
   inspects the source tree, detects the stack (Rust, Go, pnpm, npm, uv, and
   more), and proposes a minimal.toml; pass `-y` to skip the confirmation
   prompt.
+- Whenever you create a minimal.toml or explain creating one, state that it
+  requires a pinned `[upstream]` (repo, branch, and a full `locked_commit`
+  hash); `min init` writes one, and an unpinned config does not resolve.
 - Hand-author only when detection picks wrong or the layout is unusual, and
   still finish with `mip check`.
 
