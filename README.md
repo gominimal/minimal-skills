@@ -1,4 +1,11 @@
-# minimal-skills
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/minimal-mark-light.svg">
+    <img src="assets/minimal-mark-dark.svg" alt="Minimal logo" width="120">
+  </picture>
+</p>
+
+<h1 align="center">minimal-skills</h1>
 
 Claude Code skills for the [Minimal](https://minimal.dev) sandbox, packaged as
 a plugin, plus the eval pipeline that keeps them honest. Each skill teaches
