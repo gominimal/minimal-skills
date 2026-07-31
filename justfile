@@ -1,5 +1,5 @@
 # Local eval loop for minimal-skills. LLM recipes (everything except
-# lint-urls) need ANTHROPIC_API_KEY set and the claude CLI on PATH
+# lint-urls) need an authenticated claude CLI on PATH (CLAUDE_CODE_OAUTH_TOKEN in CI)
 # (npm install -g @anthropic-ai/claude-code). Runner contract: evals/SCHEMA.md.
 
 # List available recipes.

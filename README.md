@@ -49,7 +49,7 @@ Failures of blocking nightly jobs open or update a single tracking issue.
 
 ## Dev loop
 
-Needs `ANTHROPIC_API_KEY` set and the `claude` CLI on PATH
+Needs the `claude` CLI on PATH, authenticated (locally via `claude` login; CI passes a `CLAUDE_CODE_OAUTH_TOKEN` secret generated with `claude setup-token`)
 (`npm install -g @anthropic-ai/claude-code`); `lint-urls` needs neither.
 
 ```
@@ -79,3 +79,11 @@ justfile              local dev-loop recipes
 - `minimal-networking` is experimental: its surface has no public docs (that
   is intentional), so it carries inline knowledge and may change or break
   without notice.
+
+## License
+
+MIT, see [LICENSE](LICENSE).
+
+Note: the optional LLM style judge (`--judge`) uses the Anthropic SDK and
+needs `ANTHROPIC_API_KEY`; the default pipeline authenticates the `claude`
+CLI alone and never requires it.
