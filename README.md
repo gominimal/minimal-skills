@@ -7,7 +7,7 @@
 
 <h1 align="center">minimal-skills</h1>
 
-Claude Code skills for the [Minimal](https://minimal.dev) sandbox, packaged as
+Claude Code skills for the [Minimal](https://minimal.dev) developer system, packaged as
 a plugin, plus the eval pipeline that keeps them honest. Each skill teaches
 Claude Code how to drive one slice of Minimal (setup, configuration,
 networking, diagnostics), and every skill is continuously tested for trigger
@@ -27,7 +27,7 @@ Or run `/plugin` inside the Claude Code REPL and install `minimal` from the
 
 | Skill | What it does |
 |---|---|
-| `minimal-setup` | Get a repo running in a Minimal developer system: install, `min init`, session creation and activation. |
+| `minimal-setup` | Get a repo running in the Minimal developer system: install, `min init`, session creation and activation. |
 | `minimal-config` | Author and validate `minimal.toml`: packages, profiles, stacks, upstream pinning, `mip check`. |
 | `minimal-networking` | Session networking: the routing proxy, ingress, and reaching the host. Experimental. |
 | `minimal-diag` | Diagnose broken sessions and builds: `min bug` support bundles, logs, common failure modes. |
