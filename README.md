@@ -27,7 +27,7 @@ Or run `/plugin` inside the Claude Code REPL and install `minimal` from the
 
 | Skill | What it does |
 |---|---|
-| `minimal-setup` | Get a repo running in a Minimal sandbox: install, `min init`, session creation and activation. |
+| `minimal-setup` | Get a repo running in a Minimal developer system: install, `min init`, session creation and activation. |
 | `minimal-config` | Author and validate `minimal.toml`: packages, profiles, stacks, upstream pinning, `mip check`. |
 | `minimal-networking` | Session networking: the routing proxy, ingress, and reaching the host. Experimental. |
 | `minimal-diag` | Diagnose broken sessions and builds: `min bug` support bundles, logs, common failure modes. |
