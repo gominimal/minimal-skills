@@ -1,0 +1,9 @@
+[project]
+name = "minimal-skills-evals"
+version = "0.1.0"
+description = "Eval harness for the minimal-skills plugin. Binding contract: SCHEMA.md."
+requires-python = ">=3.11"
+dependencies = [
+    "requests>=2.31",
+    "anthropic>=0.40",
+]

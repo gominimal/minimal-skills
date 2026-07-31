@@ -1,0 +1,219 @@
+[
+  {
+    "id": "setup-001",
+    "prompt": "Set up minimal for this repo so I can develop it in a sandbox.",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      "uses_min_init",
+      { "name": "response_matches", "args": { "pattern": "min session activate" } },
+      "no_hidden_flag_leak",
+      "docs_urls_valid"
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "setup-002",
+    "prompt": "give me a sandbox shell for this repo",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      { "name": "response_matches", "args": { "pattern": "min session activate" } },
+      { "name": "response_matches", "args": { "pattern": "attach" } },
+      "no_hidden_flag_leak"
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "setup-003",
+    "prompt": "How do I install minimal on my Mac?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      { "name": "response_matches", "args": { "pattern": "curl" } },
+      { "name": "response_matches", "args": { "pattern": "go\\.minimal\\.dev/stable" } },
+      "docs_urls_valid"
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "setup-004",
+    "prompt": "How do I attach to my minimal session again after I exited the shell?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      { "name": "response_matches", "args": { "pattern": "min session attach" } }
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "setup-005",
+    "prompt": "destroy all my minimal sessions",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      { "name": "response_matches", "args": { "pattern": "min session destroy" } },
+      { "name": "response_matches", "args": { "pattern": "--all" } }
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "setup-006",
+    "prompt": "I need to script Minimal session creation in CI. What's the right way to do it?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      "activate_no_prompt",
+      { "name": "response_matches", "args": { "pattern": "min session activate" } },
+      { "name": "response_matches", "args": { "pattern": "--no-prompt" } },
+      "no_hidden_flag_leak"
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "setup-007",
+    "prompt": "From a shell script, how do I get the list of minimal sessions in a machine-readable format?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      { "name": "response_matches", "args": { "pattern": "min (session )?(list|ls).*--json" } }
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "setup-008",
+    "prompt": "You are running inside a Minimal session. Where did my project files end up, and where should you keep scratch files so they survive detach and reattach?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "capability",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      { "name": "response_matches", "args": { "pattern": "/workbench" } },
+      { "name": "response_matches", "args": { "pattern": "ephemeral|wiped|not persist|lost between" } }
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "setup-009",
+    "prompt": "Can I run an arbitrary shell command in my minimal session non-interactively, like min session attach -c 'make test'?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "capability",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      { "name": "response_matches", "args": { "pattern": "min run" } }
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "setup-010",
+    "prompt": "How do I get my editor and dotfiles into every minimal session I create, without changing the project's minimal.toml?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "capability",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      { "name": "response_matches", "args": { "pattern": "--loadout" } },
+      "cites_docs_url",
+      "docs_urls_valid"
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "setup-011",
+    "prompt": "min session activate warned that it skipped uploading my project because the directory isn't a VCS root. How do I make it upload anyway?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "capability",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      { "name": "response_matches", "args": { "pattern": "--sync tarball" } }
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "setup-012",
+    "prompt": "Set up this project in a minimal sandbox and confirm the session is active.",
+    "should_trigger": true,
+    "tier": "functional",
+    "suite": "capability",
+    "trials": null,
+    "allowed_tools": ["Skill", "Bash", "Read", "Write", "Edit"],
+    "expected_checks": [
+      "activate_no_prompt",
+      "no_hidden_flag_leak"
+    ],
+    "functional_asserts": [
+      "min session list --json | jq -e '.sessions | length >= 1'"
+    ]
+  },
+  {
+    "id": "setup-013",
+    "prompt": "Set up a Python venv for this project and install the requirements.",
+    "should_trigger": false,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [],
+    "functional_asserts": []
+  },
+  {
+    "id": "setup-014",
+    "prompt": "Write a Dockerfile and create a docker container for this app.",
+    "should_trigger": false,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [],
+    "functional_asserts": []
+  },
+  {
+    "id": "setup-015",
+    "prompt": "Set up direnv so my environment variables load automatically in this repo.",
+    "should_trigger": false,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [],
+    "functional_asserts": []
+  },
+  {
+    "id": "setup-016",
+    "prompt": "How do I detach from a tmux session without killing it?",
+    "should_trigger": false,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [],
+    "functional_asserts": []
+  }
+]

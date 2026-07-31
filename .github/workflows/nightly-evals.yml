@@ -1,0 +1,187 @@
+# Nightly eval tier: the functional suite against real Minimal installs from
+# the stable and nightly channels, plus two canaries (obsolescence, docs
+# drift). A blocking failure files (or updates) a tracking issue rather than
+# rotting in the Actions tab. Runner CLI contract: evals/SCHEMA.md.
+name: nightly-evals
+
+on:
+  schedule:
+    - cron: "0 7 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  functional:
+    # Full suite (text + functional tiers), 3 trials, against a real `min`
+    # from each release channel. BLOCKING - feeds notify.
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        channel: [stable, nightly]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install claude CLI
+        run: npm install -g @anthropic-ai/claude-code
+      - name: Install Minimal (${{ matrix.channel }} channel)
+        # Verbatim installer from the published install guide, with the
+        # channel substituted into the go.minimal.dev path.
+        run: curl --proto "=https" --tlsv1.2 -fsSL https://go.minimal.dev/${{ matrix.channel }} | sh
+      - name: Ensure min is on PATH
+        # The installer's bin prefix is ${MINIMAL_BIN:-$HOME/.local/bin}.
+        run: |
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          "$HOME/.local/bin/min" --version
+      - name: Run evals (all tiers, 3 trials)
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          mkdir -p evals/reports
+          uv run --project evals evals/runner.py --tier all --trials 3 \
+            --skip-permissions \
+            --report evals/reports/functional-${{ matrix.channel }}.json \
+            --summary summary.md
+      - name: Publish summary
+        if: always()
+        run: |
+          if [ -f summary.md ]; then cat summary.md >> "$GITHUB_STEP_SUMMARY"; fi
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: functional-report-${{ matrix.channel }}
+          path: evals/reports/functional-${{ matrix.channel }}.json
+          if-no-files-found: ignore
+      - name: Teardown Minimal (best effort)
+        if: always()
+        run: |
+          min session destroy --all --force || true
+          min stop --force || true
+
+  obsolescence:
+    # Canary: run the text tier WITHOUT installing the skills into the
+    # workspace. When the bare model starts passing everywhere, the skills
+    # are paying no rent. Advisory - never trips notify.
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install claude CLI
+        run: npm install -g @anthropic-ai/claude-code
+      - name: Run text tier without skills
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          mkdir -p evals/reports
+          uv run --project evals evals/runner.py --tier text --without-skill \
+            --trials 3 --skip-permissions \
+            --report evals/reports/obsolescence.json --summary summary.md
+      - name: Publish summary
+        if: always()
+        run: |
+          if [ -f summary.md ]; then cat summary.md >> "$GITHUB_STEP_SUMMARY"; fi
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: obsolescence-report
+          path: evals/reports/obsolescence.json
+          if-no-files-found: ignore
+
+  docs-drift:
+    # Canary, no LLM: hash the published minimal.dev pages the skills link
+    # and compare against the committed snapshot. Content drift means a
+    # skill may be restating (or contradicting) stale docs. BLOCKING.
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Check linked docs pages for drift
+        shell: bash
+        run: |
+          set -euo pipefail
+          snapshot=evals/docs-snapshots.json
+          mapfile -t urls < <(grep -rhoE 'https://minimal\.dev/[A-Za-z0-9._/-]+' skills/*/SKILL.md 2>/dev/null | sed -E 's/[.,]+$//' | sort -u)
+          if [ "${#urls[@]}" -eq 0 ]; then
+            echo "::error::No https://minimal.dev/ URLs found in skills/*/SKILL.md" >&2
+            exit 1
+          fi
+          declare -A current
+          for url in "${urls[@]}"; do
+            current["$url"]="$(curl --proto '=https' --tlsv1.2 -fsSL "$url" | sha256sum | cut -d' ' -f1)"
+          done
+          current_json="$(for url in "${urls[@]}"; do printf '%s\t%s\n' "$url" "${current[$url]}"; done \
+            | jq -Rn '[inputs | split("\t") | {(.[0]): .[1]}] | add')"
+          if [ ! -f "$snapshot" ]; then
+            echo "::warning::$snapshot does not exist yet. Commit the JSON below as $snapshot to arm this canary."
+            echo "$current_json"
+            exit 0
+          fi
+          drift=0
+          for url in "${urls[@]}"; do
+            old="$(jq -r --arg u "$url" '.[$u] // empty' "$snapshot")"
+            if [ -z "$old" ]; then
+              echo "NEW (not in snapshot): $url"
+              drift=1
+            elif [ "$old" != "${current[$url]}" ]; then
+              echo "CHANGED: $url"
+              drift=1
+            fi
+          done
+          if [ "$drift" -ne 0 ]; then
+            echo "::error::Docs drift detected. Review the pages above, update the skills if needed, then commit this as $snapshot:"
+            echo "$current_json"
+            exit 1
+          fi
+          echo "No drift across ${#urls[@]} linked docs pages."
+
+  notify:
+    # Open or update a single tracking issue when a blocking nightly job
+    # fails. obsolescence is continue-on-error, so it never lands here.
+    needs: [functional, obsolescence, docs-drift]
+    if: failure()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Open or update the nightly-evals tracking issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          FUNCTIONAL: ${{ needs.functional.result }}
+          OBSOLESCENCE: ${{ needs.obsolescence.result }}
+          DOCS_DRIFT: ${{ needs.docs-drift.result }}
+        run: |
+          set -euo pipefail
+          # Dedup by label, not title search: label filtering is immediately
+          # consistent, so back-to-back failures cannot open duplicates.
+          gh label create nightly --repo "$GITHUB_REPOSITORY" \
+            --color B60205 --description "Nightly eval failure" 2>/dev/null || true
+          body="$(printf 'A nightly-evals run failed.\n\n- functional: %s\n- obsolescence (advisory): %s\n- docs-drift: %s\n\nRun: %s' \
+            "$FUNCTIONAL" "$OBSOLESCENCE" "$DOCS_DRIFT" "$RUN_URL")"
+          existing="$(gh issue list --repo "$GITHUB_REPOSITORY" --state open \
+            --label nightly --json number --jq '.[0].number // empty')"
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --repo "$GITHUB_REPOSITORY" --body "$body"
+          else
+            gh issue create --repo "$GITHUB_REPOSITORY" \
+              --title "nightly-evals failure" --body "$body" --label nightly
+          fi

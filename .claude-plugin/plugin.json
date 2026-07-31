@@ -1,0 +1,8 @@
+{
+  "name": "minimal",
+  "version": "0.1.0",
+  "description": "Skills for the Minimal sandbox: project setup and sessions, minimal.toml authoring, diagnostics, and the experimental networking/preview surface.",
+  "author": {
+    "name": "gominimal"
+  }
+}

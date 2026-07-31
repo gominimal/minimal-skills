@@ -1,0 +1,13 @@
+{
+  "name": "gominimal",
+  "owner": {
+    "name": "gominimal"
+  },
+  "plugins": [
+    {
+      "name": "minimal",
+      "source": "./",
+      "description": "Skills for the Minimal sandbox: project setup and sessions, minimal.toml authoring, diagnostics, and the experimental networking/preview surface."
+    }
+  ]
+}

@@ -1,0 +1,159 @@
+[
+  {
+    "id": "diag-001",
+    "prompt": "minimal is broken on my machine, how do I report it to the devs?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      "min_bug_suggested",
+      "docs_urls_valid"
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "diag-002",
+    "prompt": "my min session won't start, gather what the minimal devs need to debug this",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      "min_bug_suggested",
+      { "name": "response_matches", "args": { "pattern": "min bug" } }
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "diag-003",
+    "prompt": "collect a minimal diagnostic bundle, but the VM seems wedged and boots just hang forever",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      "min_bug_suggested",
+      { "name": "response_matches", "args": { "pattern": "--no-guest" } }
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "diag-004",
+    "prompt": "the minimald daemon is unreachable on my machine, can I still collect diagnostics for a minimal bug report?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      "min_bug_suggested",
+      "docs_urls_valid",
+      { "name": "response_matches", "args": { "pattern": "min bug" } }
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "diag-005",
+    "prompt": "I want to send the minimal team a diagnostic bundle, but I'm worried it will leak my source code or secrets",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      "min_bug_suggested",
+      { "name": "response_matches", "args": { "pattern": "redact" } }
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "diag-006",
+    "prompt": "collect a minimal diag bundle for the dev team, but write it to /tmp/diag.tar.zst instead of the current directory",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      "min_bug_suggested",
+      { "name": "response_matches", "args": { "pattern": "--output|-o /tmp" } }
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "diag-007",
+    "prompt": "collecting a minimal diagnostic bundle takes forever waiting on the VM guest, can I cap how long that part takes?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "capability",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      "min_bug_suggested",
+      { "name": "response_matches", "args": { "pattern": "--guest-timeout-secs|--no-guest" } }
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "diag-008",
+    "prompt": "something is off with my minimal install, sessions flake and the vm sometimes never comes up. what should I send the maintainers?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "capability",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      "min_bug_suggested",
+      "docs_urls_valid"
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "diag-009",
+    "prompt": "my pytest suite is failing, debug it",
+    "should_trigger": false,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [],
+    "functional_asserts": []
+  },
+  {
+    "id": "diag-010",
+    "prompt": "file a bug report for my own project on github",
+    "should_trigger": false,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [],
+    "functional_asserts": []
+  },
+  {
+    "id": "diag-011",
+    "prompt": "the docker daemon is unreachable, how do I fix it?",
+    "should_trigger": false,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [],
+    "functional_asserts": []
+  },
+  {
+    "id": "diag-012",
+    "prompt": "collect a heap dump and logs from my node app so I can attach them to a bug report",
+    "should_trigger": false,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [],
+    "functional_asserts": []
+  }
+]

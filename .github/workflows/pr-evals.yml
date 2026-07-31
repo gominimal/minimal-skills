@@ -1,0 +1,65 @@
+# PR gate for the skills: a no-secrets URL lint first, then the text-tier
+# eval suite (trigger accuracy + response checks, no command execution).
+# Runner CLI contract: evals/SCHEMA.md.
+name: pr-evals
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-evals-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-urls:
+    # No LLM, no secrets: every minimal.dev URL in skills/*/SKILL.md must
+    # return 200. Cheap fail-fast gate before the paid tier below.
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@v5
+      - name: Lint skill docs URLs
+        run: uv run --project evals evals/runner.py --lint-urls
+
+  text-evals:
+    # Text tier, 1 trial per case (the runner's PR default). Exit code is
+    # nonzero iff any regression-suite case fails, so this job is the gate.
+    needs: lint-urls
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install claude CLI
+        run: npm install -g @anthropic-ai/claude-code
+      - name: Run text-tier evals
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          mkdir -p evals/reports
+          uv run --project evals evals/runner.py --tier text --trials 1 \
+            --skip-permissions --report evals/reports/pr.json --summary summary.md
+      - name: Publish summary
+        if: always()
+        run: |
+          if [ -f summary.md ]; then cat summary.md >> "$GITHUB_STEP_SUMMARY"; fi
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-eval-report
+          path: evals/reports/pr.json
+          if-no-files-found: ignore

@@ -1,0 +1,229 @@
+[
+  {
+    "id": "config-001",
+    "prompt": "Add node to this project's minimal config as a runtime dependency, so the built app can run it anywhere it ships.",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      { "name": "response_matches", "args": { "pattern": "runtime_packages|min add --runtime" } },
+      "mip_check_suggested",
+      "no_hidden_flag_leak",
+      "docs_urls_valid"
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "config-002",
+    "prompt": "Every contributor's dev session on this project should have ripgrep and jq available. Update the minimal config accordingly.",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      { "name": "response_matches", "args": { "pattern": "\\[session\\]|min add --session" } },
+      "mip_check_suggested",
+      "no_hidden_flag_leak",
+      "docs_urls_valid"
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "config-003",
+    "prompt": "Define a test task in minimal.toml that runs cargo nextest run.",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      { "name": "response_matches", "args": { "pattern": "\\[tasks\\.test\\]" } },
+      { "name": "response_matches", "args": { "pattern": "cargo nextest" } },
+      "mip_check_suggested"
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "config-004",
+    "prompt": "Pin the upstream in this minimal.toml so builds are reproducible:\n\n[upstream]\nrepo = \"https://github.com/gominimal/pkgs\"\nbranch = \"main\"",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      { "name": "response_matches", "args": { "pattern": "locked_commit" } },
+      "pins_upstream",
+      "mip_check_suggested"
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "config-005",
+    "prompt": "mip check fails on my minimal.toml. The file is:\n\n[upstream]\nrepo = \"https://github.com/gominimal/pkgs\"\nbranch = \"main\"\n\n[stack]\nuse = \"rust\"\n\nWhat is wrong and how do I fix it?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      { "name": "response_matches", "args": { "pattern": "locked_commit" } },
+      "pins_upstream"
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "config-006",
+    "prompt": "This repo is a Cargo workspace but its minimal.toml declares no stack. Convert the project to use the rust stack.",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      { "name": "response_matches", "args": { "pattern": "\\[stack\\]" } },
+      { "name": "response_matches", "args": { "pattern": "(use|name)\\s*=\\s*\"rust\"" } },
+      "mip_check_suggested"
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "config-007",
+    "prompt": "Set up a minimal.toml for this Go repo from scratch. What is the recommended way to create it?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      "uses_min_init",
+      "pins_upstream",
+      "no_hidden_flag_leak",
+      "docs_urls_valid"
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "config-008",
+    "prompt": "My deploy task in minimal.toml should take an environment argument that must be either staging or prod, and pass it to the command. How do I declare that?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      { "name": "response_matches", "args": { "pattern": "args" } },
+      { "name": "response_matches", "args": { "pattern": "%\\{" } }
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "config-009",
+    "prompt": "I was fixing an unrelated bug and now git shows the locked_commit lines in minimal.toml changed. I never edited that file. What happened and what should I do before committing?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      { "name": "response_matches", "args": { "pattern": "mip update" } },
+      { "name": "response_matches", "args": { "pattern": "locked_commit" } }
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "config-010",
+    "prompt": "In this project's minimal config, every contributor's session should get RUST_LOG=info, and DATABASE_URL should come from the developer's own environment with postgres://localhost/dev as the fallback.",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      { "name": "response_matches", "args": { "pattern": "inherit\\s*=\\s*true" } },
+      { "name": "response_matches", "args": { "pattern": "default\\s*=" } },
+      "mip_check_suggested"
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "config-011",
+    "prompt": "Add an outputs section to minimal.toml that builds an OCI image of the app with /app/server as the entrypoint, and show how to produce the image file.",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "capability",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      { "name": "response_matches", "args": { "pattern": "\\[outputs\\." } },
+      { "name": "response_matches", "args": { "pattern": "entrypoint" } },
+      { "name": "response_matches", "args": { "pattern": "mip materialize" } },
+      "cites_docs_url",
+      "docs_urls_valid"
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "config-012",
+    "prompt": "Scaffold a valid minimal.toml for this empty repo, pinned to the public upstream at https://github.com/gominimal/pkgs, with an interactive shell task. Verify your work before finishing.",
+    "should_trigger": true,
+    "tier": "functional",
+    "suite": "capability",
+    "trials": null,
+    "allowed_tools": ["Skill", "Bash", "Read", "Write", "Edit"],
+    "expected_checks": [
+      "pins_upstream",
+      { "name": "workspace_file_matches", "args": { "path": "minimal.toml", "pattern": "\\[upstream\\]" } },
+      { "name": "workspace_file_matches", "args": { "path": "minimal.toml", "pattern": "locked_commit" } },
+      "no_hidden_flag_leak"
+    ],
+    "functional_asserts": ["mip check"]
+  },
+  {
+    "id": "config-013",
+    "prompt": "Add serde with the derive feature as a dependency in Cargo.toml.",
+    "should_trigger": false,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [],
+    "functional_asserts": []
+  },
+  {
+    "id": "config-014",
+    "prompt": "Write a docker-compose.yml with postgres and redis services for local development.",
+    "should_trigger": false,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [],
+    "functional_asserts": []
+  },
+  {
+    "id": "config-015",
+    "prompt": "Add a lint script to package.json that runs eslint on src/.",
+    "should_trigger": false,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [],
+    "functional_asserts": []
+  },
+  {
+    "id": "config-016",
+    "prompt": "In TOML, what is the syntax for an array of tables and when would I use one?",
+    "should_trigger": false,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [],
+    "functional_asserts": []
+  }
+]

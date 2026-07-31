@@ -1,0 +1,198 @@
+[
+  {
+    "id": "net-001",
+    "prompt": "I'm running astro dev inside my minimal session, how do I see it in my browser?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      "correct_proxy_port",
+      { "name": "response_matches", "args": { "pattern": "proxy-server=.?http://127\\.0\\.0\\.1:7654" } },
+      { "name": "response_matches", "args": { "pattern": "\\.local\\.min\\.internal" } }
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "net-002",
+    "prompt": "curl the dev server in session web from my mac",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      "correct_proxy_port",
+      { "name": "response_matches", "args": { "pattern": "(-x|--proxy)\\s+.?http://127\\.0\\.0\\.1:7654" } },
+      { "name": "response_matches", "args": { "pattern": "web\\.local\\.min\\.internal" } }
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "net-003",
+    "prompt": "my two minimal sessions need to talk to each other",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      "correct_proxy_port",
+      { "name": "response_matches", "args": { "pattern": "HTTP_PROXY=http://127\\.0\\.0\\.1:7654" } },
+      { "name": "response_matches", "args": { "pattern": "\\.local\\.min\\.internal" } }
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "net-004",
+    "prompt": "from inside the session I need to hit a service on my mac's localhost:8787",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      "host_alias_ip_correct",
+      { "name": "response_matches", "args": { "pattern": "100\\.64\\.255\\.254:8787" } }
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "net-005",
+    "prompt": "give me a plain localhost port for my session without proxy config",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      { "name": "response_matches", "args": { "pattern": "--network\\s+own-ip" } },
+      { "name": "response_matches", "args": { "pattern": "--ingress\\s+(\\d+:\\d+|EXT:INT)" } }
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "net-006",
+    "prompt": "how do I share a public preview URL for the app running in my minimal session?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "capability",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      { "name": "response_matches", "args": { "pattern": "(cloudflared|ngrok|tunnel)" } },
+      { "name": "response_matches", "args": { "pattern": "(loopback|127\\.0\\.0\\.1)" } }
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "net-007",
+    "prompt": "nothing loads through the minimal preview proxy on my mac, what should I check first?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      { "name": "response_matches", "args": { "pattern": "lsof\\s+-nP\\s+-iTCP:7654\\s+-sTCP:LISTEN" } }
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "net-008",
+    "prompt": "I renamed my minimal session to api, what preview URL do I use now?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      { "name": "response_matches", "args": { "pattern": "api\\.local\\.min\\.internal" } }
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "net-009",
+    "prompt": "does vite HMR work through the minimal session preview proxy?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "capability",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      { "name": "response_matches", "args": { "pattern": "websocket" } }
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "net-010",
+    "prompt": "probing the minimal preview proxy with socat seems to hang, but curl works fine. is it broken?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      { "name": "response_matches", "args": { "pattern": "502" } }
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "net-011",
+    "prompt": "how do I inspect the effective network policy of a minimal session?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      { "name": "response_matches", "args": { "pattern": "min session policy" } }
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "net-012",
+    "prompt": "set up an nginx reverse proxy for my production deployment",
+    "should_trigger": false,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [],
+    "functional_asserts": []
+  },
+  {
+    "id": "net-013",
+    "prompt": "expose port 8080 from my docker container",
+    "should_trigger": false,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [],
+    "functional_asserts": []
+  },
+  {
+    "id": "net-014",
+    "prompt": "configure kubernetes ingress for my api service",
+    "should_trigger": false,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [],
+    "functional_asserts": []
+  },
+  {
+    "id": "net-015",
+    "prompt": "forward a remote postgres port to my laptop over ssh",
+    "should_trigger": false,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [],
+    "functional_asserts": []
+  }
+]
