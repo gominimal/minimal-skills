@@ -15,13 +15,19 @@ https://minimal.dev/docs/reference/minimal-dot-toml
   `mip` searches upward from the cwd, so commands work from subdirectories.
 - Always pin `[upstream]`: every minimal.toml you emit must carry `repo`,
   `branch`, and a full `locked_commit` hash. Never leave an upstream unpinned.
-- Never run `mip update` as a side effect of other work. It re-resolves
-  `branch` to its current HEAD and rewrites `locked_commit` in place for the
-  upstream and every sideload. Run it only when the user explicitly wants new
-  pins, and tell them to expect a diff on those fields.
-- Always run `mip check` after any minimal.toml change (hand edit or
-  `min add`) and fix everything it reports. `mip check --fix` attempts
-  automatic fixes. CLI details: https://minimal.dev/docs/reference/cli-mip
+- Never run `mip update` (or its passthrough `min update`) as a side effect
+  of other work. It re-resolves `branch` to its current HEAD and rewrites
+  `locked_commit` in place for the upstream and every sideload. Run it only
+  when the user explicitly wants new pins, and tell them to expect a diff on
+  those fields.
+- Always validate after any minimal.toml change (hand edit or `min add`) and
+  fix everything it reports: `mip check` on a Linux host, or `min check`
+  inside a session on any platform. The full `mip` CLI is Linux-only and
+  does not exist on macOS installs; the in-session `min` equivalents
+  (`min check`, `min add`, `min run`) are the macOS path. `mip check --fix`
+  attempts automatic fixes. CLI details:
+  https://minimal.dev/docs/reference/cli-mip and
+  https://minimal.dev/docs/reference/sandbox-operations
 
 ## Scaffolding vs hand-authoring
 
@@ -33,7 +39,7 @@ https://minimal.dev/docs/reference/minimal-dot-toml
   requires a pinned `[upstream]` (repo, branch, and a full `locked_commit`
   hash); `min init` writes one, and an unpinned config does not resolve.
 - Hand-author only when detection picks wrong or the layout is unusual, and
-  still finish with `mip check`.
+  still finish with `mip check` (Linux) or in-session `min check`.
 
 ## Sections, one line each
 
@@ -46,7 +52,7 @@ https://minimal.dev/docs/reference/minimal-dot-toml
 - `[session]`: packages, vars, and patches every contributor's dev session
   gets on this project.
 - `[tasks.<name>]`: named sandboxed commands.
-- `[outputs.<name>]`: artifacts built by `mip materialize <name> -o <path>`
+- `[outputs.<name>]`: artifacts built by `mip materialize <name> -o <path>` (Linux)
   (`oci-image` by default, or `raw-file`).
 - `[params]`: repo-wide task arguments; every entry must declare a `default`.
 - Packages are the unit of software: project-local ones are Nickel build

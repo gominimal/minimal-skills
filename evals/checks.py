@@ -150,7 +150,9 @@ def pins_upstream(args: dict, result: Result) -> bool:
 
 
 def mip_check_suggested(args: dict, result: Result) -> bool:
-    return re.search(r"\bmip\s+check\b", result.response_text, FLAGS) is not None
+    # `mip` is Linux-only; in-session `min check` is the equivalent (and the
+    # only option on macOS), so either spelling satisfies the directive.
+    return re.search(r"\b(mip|min)\s+check\b", result.response_text, FLAGS) is not None
 
 
 def min_bug_suggested(args: dict, result: Result) -> bool:

@@ -103,7 +103,7 @@ Named (no args):
 | `uses_min_init` | response recommends or runs `min init` |
 | `activate_no_prompt` | every scripted/non-interactive `min session activate` in the response carries `--no-prompt` |
 | `pins_upstream` | any emitted `minimal.toml` has an `[upstream]` with `locked_commit` |
-| `mip_check_suggested` | response suggests `mip check` to validate config |
+| `mip_check_suggested` | response suggests `mip check` (or in-session `min check`, the macOS path) to validate config |
 | `min_bug_suggested` | response suggests `min bug` for diagnostics |
 | `no_hidden_flag_leak` | response does NOT recommend `--network` or `--ingress` (use on setup/config cases; networking cases simply omit it) |
 | `correct_proxy_port` | networking answers use port 7654 for the routing proxy |

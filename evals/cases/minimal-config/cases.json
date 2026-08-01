@@ -121,7 +121,7 @@
       {
         "name": "response_matches",
         "args": {
-          "pattern": "mip\\s+(init|update)"
+          "pattern": "(mip|min)\\s+(init|update)"
         }
       },
       {
