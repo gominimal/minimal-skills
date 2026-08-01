@@ -130,8 +130,8 @@ it to this table in the same change that implements it in `checks.py`.
 --lint-urls         no-LLM mode: every minimal.dev URL in skills/*/SKILL.md must return 200; exits nonzero on any failure
 ```
 
-Mechanics: per trial, fresh temp workspace; unless `--without-skill`, ALL
-four skills are copied to `<workspace>/.claude/skills/` (trigger realism:
+Mechanics: per trial, fresh temp workspace; unless `--without-skill`, every
+skill directory is copied to `<workspace>/.claude/skills/` (trigger realism:
 the right one must fire, and for negatives none may). Invocation:
 `claude -p <prompt> --output-format stream-json --verbose --max-turns 10`
 with `--allowedTools` from the case, cwd = workspace. Text tier additionally

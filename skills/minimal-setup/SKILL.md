@@ -1,6 +1,6 @@
 ---
 name: minimal-setup
-description: Use when the user wants to install Minimal, set up a project with min init, create/activate/attach/rename/destroy sandboxed min sessions, develop a repo in a Minimal sandbox, script sessions in CI, or orient an agent running inside a session. Do not use for deep minimal.toml package/task authoring (minimal-config), session networking or preview URLs (minimal-networking), diagnostics bundles (minimal-diag), or non-Minimal sandboxes like venv, Docker, or direnv.
+description: Use when the user wants to install Minimal, set up a project with min init, create/activate/attach/rename/destroy sandboxed min sessions, develop a repo in a Minimal sandbox, script sessions in CI, or orient an agent running inside a session. Do not use for deep minimal.toml package/task authoring (minimal-config), personalizing sessions with loadouts (minimal-loadouts), session networking or preview URLs (minimal-networking), diagnostics bundles (minimal-diag), or non-Minimal sandboxes like venv, Docker, or direnv.
 ---
 
 # Minimal setup and sessions
@@ -84,12 +84,10 @@ that schema.
 
 ## Loadouts
 
-A loadout is a per-developer bundle of packages, env vars, and dotfile patches
-layered on top of the project's declared session, so personal tooling never
-contaminates the committed `minimal.toml`. Apply one with
-`min session activate --loadout NAME` (repeatable) and list them with
-`min loadout list`. Schema and composition rules:
-https://minimal.dev/docs/reference/loadouts
+Personal tooling (editor, dotfiles, env vars) belongs in a loadout applied
+with `min session activate --loadout NAME`, never in the committed
+`minimal.toml`. Authoring loadout files, selection defaults, and composition
+conflicts are the minimal-loadouts skill's job; hand off there.
 
 ## When something breaks
 

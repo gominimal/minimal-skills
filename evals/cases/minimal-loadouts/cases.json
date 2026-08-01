@@ -1,30 +1,7 @@
 [
   {
-    "id": "setup-001",
-    "prompt": "Set up minimal for this repo so I can develop it in a sandbox.",
-    "should_trigger": true,
-    "tier": "text",
-    "suite": "regression",
-    "trials": null,
-    "allowed_tools": [
-      "Skill"
-    ],
-    "expected_checks": [
-      "uses_min_init",
-      {
-        "name": "response_matches",
-        "args": {
-          "pattern": "min session activate"
-        }
-      },
-      "no_hidden_flag_leak",
-      "docs_urls_valid"
-    ],
-    "functional_asserts": []
-  },
-  {
-    "id": "setup-002",
-    "prompt": "give me a sandbox shell for this repo",
+    "id": "loadouts-001",
+    "prompt": "How do I get my editor and dotfiles into every minimal session I create, without changing the project's minimal.toml?",
     "should_trigger": true,
     "tier": "text",
     "suite": "regression",
@@ -36,40 +13,13 @@
       {
         "name": "response_matches",
         "args": {
-          "pattern": "min session activate"
+          "pattern": "--loadout|default_loadouts"
         }
       },
       {
         "name": "response_matches",
         "args": {
-          "pattern": "attach"
-        }
-      },
-      "no_hidden_flag_leak"
-    ],
-    "functional_asserts": []
-  },
-  {
-    "id": "setup-003",
-    "prompt": "How do I install minimal on my Mac?",
-    "should_trigger": true,
-    "tier": "text",
-    "suite": "regression",
-    "trials": null,
-    "allowed_tools": [
-      "Skill"
-    ],
-    "expected_checks": [
-      {
-        "name": "response_matches",
-        "args": {
-          "pattern": "curl"
-        }
-      },
-      {
-        "name": "response_matches",
-        "args": {
-          "pattern": "go\\.minimal\\.dev/stable"
+          "pattern": "loadouts/"
         }
       },
       "docs_urls_valid"
@@ -77,8 +27,8 @@
     "functional_asserts": []
   },
   {
-    "id": "setup-004",
-    "prompt": "How do I attach to my minimal session again after I exited the shell?",
+    "id": "loadouts-002",
+    "prompt": "Write me a minimal loadout that installs helix and zellij and copies my helix config from ~/dotfiles into the session.",
     "should_trigger": true,
     "tier": "text",
     "suite": "regression",
@@ -90,15 +40,34 @@
       {
         "name": "response_matches",
         "args": {
-          "pattern": "min session attach"
+          "pattern": "name\\s*="
         }
-      }
+      },
+      {
+        "name": "response_matches",
+        "args": {
+          "pattern": "packages\\s*=\\s*\\["
+        }
+      },
+      {
+        "name": "response_matches",
+        "args": {
+          "pattern": "patches"
+        }
+      },
+      {
+        "name": "response_matches",
+        "args": {
+          "pattern": "loadouts/"
+        }
+      },
+      "docs_urls_valid"
     ],
     "functional_asserts": []
   },
   {
-    "id": "setup-005",
-    "prompt": "destroy all my minimal sessions",
+    "id": "loadouts-003",
+    "prompt": "min session activate --loadout dev fails with a NameMismatch error mentioning my loadout file. What's wrong?",
     "should_trigger": true,
     "tier": "text",
     "suite": "regression",
@@ -110,49 +79,22 @@
       {
         "name": "response_matches",
         "args": {
-          "pattern": "min session destroy"
+          "pattern": "filename|file.?name|stem"
         }
       },
       {
         "name": "response_matches",
         "args": {
-          "pattern": "--all"
+          "pattern": "name\\s*=|`name`"
         }
-      }
+      },
+      "docs_urls_valid"
     ],
     "functional_asserts": []
   },
   {
-    "id": "setup-006",
-    "prompt": "I need to script Minimal session creation in CI. What's the right way to do it?",
-    "should_trigger": true,
-    "tier": "text",
-    "suite": "regression",
-    "trials": null,
-    "allowed_tools": [
-      "Skill"
-    ],
-    "expected_checks": [
-      "activate_no_prompt",
-      {
-        "name": "response_matches",
-        "args": {
-          "pattern": "min session activate"
-        }
-      },
-      {
-        "name": "response_matches",
-        "args": {
-          "pattern": "--no-prompt"
-        }
-      },
-      "no_hidden_flag_leak"
-    ],
-    "functional_asserts": []
-  },
-  {
-    "id": "setup-007",
-    "prompt": "From a shell script, how do I get the list of minimal sessions in a machine-readable format?",
+    "id": "loadouts-004",
+    "prompt": "In my minimal loadout I want EDITOR set to hx, and PAGER passed through from my machine but defaulting to less when unset.",
     "should_trigger": true,
     "tier": "text",
     "suite": "regression",
@@ -164,41 +106,103 @@
       {
         "name": "response_matches",
         "args": {
-          "pattern": "min (session )?(list|ls).*--json"
-        }
-      }
-    ],
-    "functional_asserts": []
-  },
-  {
-    "id": "setup-008",
-    "prompt": "You are running inside a Minimal session. Where did my project files end up, and where should you keep scratch files so they survive detach and reattach?",
-    "should_trigger": true,
-    "tier": "text",
-    "suite": "capability",
-    "trials": null,
-    "allowed_tools": [
-      "Skill"
-    ],
-    "expected_checks": [
-      {
-        "name": "response_matches",
-        "args": {
-          "pattern": "/workbench"
+          "pattern": "EDITOR\\s*=\\s*\"hx\""
         }
       },
       {
         "name": "response_matches",
         "args": {
-          "pattern": "ephemeral|wiped|not persist|lost between"
+          "pattern": "inherit\\s*=\\s*true"
         }
-      }
+      },
+      {
+        "name": "response_matches",
+        "args": {
+          "pattern": "default\\s*=\\s*\"less\""
+        }
+      },
+      "docs_urls_valid"
     ],
     "functional_asserts": []
   },
   {
-    "id": "setup-009",
-    "prompt": "Can I run an arbitrary shell command in my minimal session non-interactively, like min session attach -c 'make test'?",
+    "id": "loadouts-005",
+    "prompt": "I put a lifecycle hook in my minimal loadout to start my dev server when the session activates, but nothing runs. Why?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": [
+      "Skill"
+    ],
+    "expected_checks": [
+      {
+        "name": "response_matches",
+        "args": {
+          "pattern": "not (yet )?(executed|run|wired)|recorded"
+        }
+      },
+      "docs_urls_valid"
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "loadouts-006",
+    "prompt": "I patched my .bashrc into my minimal session with a loadout but my aliases and prompt never show up in the attach shell.",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": [
+      "Skill"
+    ],
+    "expected_checks": [
+      {
+        "name": "response_matches",
+        "args": {
+          "pattern": "\\[vars\\]|vars"
+        }
+      },
+      {
+        "name": "response_matches",
+        "args": {
+          "pattern": "noprofile|does not source|sources no|no startup files"
+        }
+      },
+      "docs_urls_valid"
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "loadouts-007",
+    "prompt": "Make my minimal loadout apply automatically every time I activate a session, without typing --loadout.",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": [
+      "Skill"
+    ],
+    "expected_checks": [
+      {
+        "name": "response_matches",
+        "args": {
+          "pattern": "default_loadouts"
+        }
+      },
+      {
+        "name": "response_matches",
+        "args": {
+          "pattern": "config\\.toml"
+        }
+      },
+      "docs_urls_valid"
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "loadouts-008",
+    "prompt": "Activating with my two minimal loadouts fails with a conflict because they set the same env var to different values. How do I resolve it?",
     "should_trigger": true,
     "tier": "text",
     "suite": "capability",
@@ -210,15 +214,16 @@
       {
         "name": "response_matches",
         "args": {
-          "pattern": "min run"
+          "pattern": "no override|hard conflict|fails? (the )?(activation|composition)|ignore"
         }
-      }
+      },
+      "docs_urls_valid"
     ],
     "functional_asserts": []
   },
   {
-    "id": "setup-011",
-    "prompt": "min session activate warned that it skipped uploading my project because the directory isn't a VCS root. How do I make it upload anyway?",
+    "id": "loadouts-009",
+    "prompt": "How do I get all my ~/dotfiles/nvim lua files into the right place in my minimal sessions?",
     "should_trigger": true,
     "tier": "text",
     "suite": "capability",
@@ -230,37 +235,43 @@
       {
         "name": "response_matches",
         "args": {
-          "pattern": "--sync tarball"
+          "pattern": "patches"
         }
-      }
+      },
+      {
+        "name": "response_matches",
+        "args": {
+          "pattern": "\\*\\*/\\*\\.lua|glob"
+        }
+      },
+      "docs_urls_valid"
     ],
     "functional_asserts": []
   },
   {
-    "id": "setup-012",
-    "prompt": "Set up this project in a minimal sandbox and confirm the session is active.",
+    "id": "loadouts-010",
+    "prompt": "What loadouts do I have configured for minimal, and what do they contain?",
     "should_trigger": true,
-    "tier": "functional",
+    "tier": "text",
     "suite": "capability",
     "trials": null,
     "allowed_tools": [
-      "Skill",
-      "Bash",
-      "Read",
-      "Write",
-      "Edit"
+      "Skill"
     ],
     "expected_checks": [
-      "activate_no_prompt",
-      "no_hidden_flag_leak"
+      {
+        "name": "response_matches",
+        "args": {
+          "pattern": "min loadout list|loadouts/"
+        }
+      },
+      "docs_urls_valid"
     ],
-    "functional_asserts": [
-      "min session list --json | jq -e '.sessions | length >= 1'"
-    ]
+    "functional_asserts": []
   },
   {
-    "id": "setup-013",
-    "prompt": "Set up a Python venv for this project and install the requirements.",
+    "id": "loadouts-011",
+    "prompt": "Set up my vim dotfiles across my machines with GNU stow.",
     "should_trigger": false,
     "tier": "text",
     "suite": "regression",
@@ -272,8 +283,8 @@
     "functional_asserts": []
   },
   {
-    "id": "setup-014",
-    "prompt": "Write a Dockerfile and create a docker container for this app.",
+    "id": "loadouts-012",
+    "prompt": "Add my personal zsh plugins and aliases to my zshrc.",
     "should_trigger": false,
     "tier": "text",
     "suite": "regression",
@@ -285,21 +296,8 @@
     "functional_asserts": []
   },
   {
-    "id": "setup-015",
-    "prompt": "Set up direnv so my environment variables load automatically in this repo.",
-    "should_trigger": false,
-    "tier": "text",
-    "suite": "regression",
-    "trials": null,
-    "allowed_tools": [
-      "Skill"
-    ],
-    "expected_checks": [],
-    "functional_asserts": []
-  },
-  {
-    "id": "setup-016",
-    "prompt": "How do I detach from a tmux session without killing it?",
+    "id": "loadouts-013",
+    "prompt": "Customize my VS Code devcontainer so my extensions and dotfiles come along.",
     "should_trigger": false,
     "tier": "text",
     "suite": "regression",
