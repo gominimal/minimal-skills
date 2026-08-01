@@ -248,6 +248,18 @@ def extract_response_text(events: list[dict]) -> str:
     return "\n".join(parts)
 
 
+def _is_infra_error(returncode: int, events: list[dict]) -> bool:
+    """True when the claude invocation itself failed rather than the case:
+    nonzero exit with no usable result event, an explicit error result, or a
+    run that produced no events at all."""
+    result_events = [e for e in events if e.get("type") == "result"]
+    if not events:
+        return True
+    if result_events and any(e.get("is_error") for e in result_events):
+        return True
+    return returncode != 0 and not result_events
+
+
 def parse_stream_json(stdout: str) -> list[dict]:
     events: list[dict] = []
     for line in stdout.splitlines():
@@ -362,16 +374,40 @@ def run_trial(
                 command += ["--disallowedTools", ",".join(denied)]
         if args.skip_permissions:
             command.append("--dangerously-skip-permissions")
-        try:
-            completed = subprocess.run(
-                command, cwd=workspace, env=os.environ.copy(),
-                capture_output=True, text=True, timeout=timeout,
-            )
-        except subprocess.TimeoutExpired:
-            record["reason"] = "timeout"
+        # A CLI-level failure (nonzero exit with no result event, or an
+        # error result) is INFRA noise: rate limits, auth, transient API
+        # errors. It says nothing about the skill, so retry with backoff
+        # instead of grading it (observed: a shared-token rate limit turned
+        # the tail of a nightly run into ~1s failures recorded as skill
+        # regressions).
+        events: list[dict] = []
+        for attempt, backoff_s in enumerate((0, 15, 45)):
+            if backoff_s:
+                print(
+                    f"  infra error; retrying in {backoff_s}s "
+                    f"(attempt {attempt + 1}/3)",
+                    file=sys.stderr,
+                )
+                time.sleep(backoff_s)
+            try:
+                completed = subprocess.run(
+                    command, cwd=workspace, env=os.environ.copy(),
+                    capture_output=True, text=True, timeout=timeout,
+                )
+            except subprocess.TimeoutExpired:
+                record["reason"] = "timeout"
+                return record
+            events = parse_stream_json(completed.stdout or "")
+            if not _is_infra_error(completed.returncode, events):
+                break
+            record["infra_errors"] = record.get("infra_errors", 0) + 1
+        else:
+            record["reason"] = "infra_error"
+            stderr_tail = (completed.stderr or "").strip()[-500:]
+            if stderr_tail:
+                record["infra_error_detail"] = stderr_tail
             return record
 
-        events = parse_stream_json(completed.stdout or "")
         response_text = extract_response_text(events)
         triggered = detect_triggered_skills(events, known)
         record["triggered_skills"] = triggered

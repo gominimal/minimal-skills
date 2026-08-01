@@ -21,6 +21,12 @@ jobs:
     timeout-minutes: 120
     strategy:
       fail-fast: false
+      # One channel at a time: every eval job spends the same
+      # CLAUDE_CODE_OAUTH_TOKEN, and running the lanes concurrently
+      # exhausted its rate limit mid-run (2026-08-01: ~80 real trials per
+      # job, then every later claude invocation failed in ~1s and was
+      # graded as a skill regression).
+      max-parallel: 1
       matrix:
         channel: [stable, nightly]
     steps:
@@ -72,6 +78,12 @@ jobs:
     # Canary: run the text tier WITHOUT installing the skills into the
     # workspace. When the bare model starts passing everywhere, the skills
     # are paying no rent. Advisory - never trips notify.
+    #
+    # Serialized after functional (same shared-token rationale as the
+    # functional matrix's max-parallel: 1). always() so the advisory canary
+    # still runs when a functional lane fails.
+    needs: functional
+    if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 90
     continue-on-error: true

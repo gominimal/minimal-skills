@@ -146,3 +146,10 @@ Pass rules: trial passes if trigger expectation holds and all
 `expected_checks` (and `functional_asserts`) pass. Regression case passes
 only if ALL trials pass; capability case if >=50% of trials pass. Exit code
 is nonzero iff any regression case fails.
+
+Infra errors are not verdicts: a claude invocation that itself fails (no
+events, an error result, or nonzero exit with no result event; rate limits
+and auth failures look like this) is retried twice with backoff (15s, 45s)
+before the trial is recorded as failed with `reason: "infra_error"`. CI
+jobs that share the one CLAUDE_CODE_OAUTH_TOKEN must also be serialized,
+not run concurrently, or they exhaust its rate limit mid-run.
