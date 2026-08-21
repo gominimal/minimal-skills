@@ -1,6 +1,6 @@
 ---
 name: minimal-sandbox
-description: "Use when running inside a Minimal sandbox (a min session or a task sandbox): a needed CLI tool is missing, a package must be installed or persisted with the in-sandbox min helper, a task or package build must run from in here, or a command fails because the environment is sandboxed. Do not use for host-side work: installing Minimal or session lifecycle (minimal-setup), minimal.toml authoring (minimal-config), networking and previews (minimal-networking), or diagnostics bundles (minimal-diag)."
+description: "Use when running inside a Minimal sandbox (a min session or task sandbox): a needed CLI tool is missing, a package must be installed or persisted with the in-sandbox min helper, a task or package build must run from in here, or a command fails because the environment is sandboxed. Do not use for host-side work (minimal-setup, minimal-config, minimal-networking, minimal-diag), or for non-Minimal environments such as a Python venv, Docker, npm, or a plain shell."
 ---
 
 # Working inside a Minimal sandbox

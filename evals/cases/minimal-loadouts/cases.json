@@ -94,7 +94,7 @@
   },
   {
     "id": "loadouts-004",
-    "prompt": "In my minimal loadout I want EDITOR set to hx, and PAGER passed through from my machine but defaulting to less when unset.",
+    "prompt": "In my minimal loadout `dev` I want EDITOR set to hx, and PAGER passed through from my machine but defaulting to less when unset.",
     "should_trigger": true,
     "tier": "text",
     "suite": "regression",
@@ -175,7 +175,7 @@
   },
   {
     "id": "loadouts-007",
-    "prompt": "Make my minimal loadout apply automatically every time I activate a session, without typing --loadout.",
+    "prompt": "Make my minimal loadout `dev` apply automatically every time I activate a session, without typing --loadout.",
     "should_trigger": true,
     "tier": "text",
     "suite": "regression",
