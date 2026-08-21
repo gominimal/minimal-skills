@@ -29,7 +29,7 @@ Or run `/plugin` inside the Claude Code REPL and install `minimal` from the
 |---|---|
 | `minimal-setup` | Get a repo running in the Minimal developer system: install, `min init`, session creation and activation. |
 | `minimal-sandbox` | Work correctly from inside a sandbox (session or task sandbox): the in-sandbox `min` helper, installing and persisting packages, task limits, what survives where. |
-| `minimal-config` | Author and validate `minimal.toml`: packages, profiles, stacks, upstream pinning, `mip check`/`min check`. |
+| `minimal-config` | Author and validate `minimal.toml`: packages, stacks, upstream pinning, `mip check`/`min check`. |
 | `minimal-loadouts` | Personalize sessions with per-developer loadouts: editors, dotfiles, env vars, patches, composition rules. |
 | `minimal-networking` | Session networking: the routing proxy, ingress, and reaching the host. Experimental. |
 | `minimal-diag` | Diagnose broken sessions and builds: `min bug` support bundles, logs, common failure modes. |

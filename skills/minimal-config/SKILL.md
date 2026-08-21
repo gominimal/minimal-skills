@@ -1,6 +1,6 @@
 ---
 name: minimal-config
-description: "Use when writing or editing minimal.toml, adding a package or tool to a project's Minimal config, defining or fixing a Minimal task, pinning or updating the [upstream], resolving mip check errors, explaining unexpected minimal.toml changes such as rewritten locked_commit lines, or choosing a stack, profile, or output for the Minimal build system. Do not use for session lifecycle or CLI usage (minimal-setup owns those), generic TOML syntax questions, or other manifests such as Cargo.toml or package.json."
+description: "Use when writing or editing minimal.toml, adding a package or tool to a project's Minimal config, defining or fixing a Minimal task, pinning or updating the [upstream], resolving mip check errors, explaining unexpected minimal.toml changes such as rewritten locked_commit lines, or choosing a stack or output for the Minimal build system. Do not use for session lifecycle or CLI usage (minimal-setup owns those), generic TOML syntax questions, or other manifests such as Cargo.toml or package.json."
 ---
 
 # Authoring and validating minimal.toml
@@ -45,12 +45,11 @@ https://minimal.dev/docs/reference/minimal-dot-toml
 
 ## Sections, one line each
 
-- `[upstream]`: the pinned git source of packages, stacks, and profiles;
+- `[upstream]`: the pinned git source of packages and stacks;
   `[[upstream.sideload]]` entries add more repos with the same pinned schema.
 - `[stack]`: names how the codebase builds (`use = "rust"`); stacks are
   Nickel specs, see https://minimal.dev/docs/reference/stack-specs
-- `[defaults]`: `profile` and `state_key` applied to every task that does not
-  set its own.
+- `[defaults]`: `state_key` applied to every task that does not set its own.
 - `[session]`: packages, vars, and patches every contributor's dev session
   gets on this project.
 - `[tasks.<name>]`: named sandboxed commands.
@@ -60,9 +59,9 @@ https://minimal.dev/docs/reference/minimal-dot-toml
 - Packages are the unit of software: project-local ones are Nickel build
   specs in `packages/<name>/build.ncl`, see
   https://minimal.dev/docs/reference/build-specs
-- Profiles are reusable task customizations in `profiles/<name>/profile.ncl`.
-  The profiles concepts page has been removed from the published docs; do
-  not cite a URL for profiles until one returns.
+- Profiles have been removed from Minimal. Do not add a `profile` key, a
+  `profiles/` directory, or a `--profiles` flag to anything, and treat any
+  such leftovers in an existing config as stale.
 
 ## Where a package goes
 

@@ -4,7 +4,7 @@ A trimmed real-world config (Minimal builds itself with it). Schema:
 https://minimal.dev/docs/reference/minimal-dot-toml
 
 ```toml
-[upstream]                       # Pinned source of packages/stacks/profiles.
+[upstream]                       # Pinned source of packages and stacks.
 repo = "https://github.com/gominimal/pkgs"
 branch = "main"
 locked_commit = "d299744531767b2edeb5b0ead2178dadc40bbeed"  # Full hash; only `mip update` rewrites it.
@@ -14,7 +14,6 @@ use = "rust"                     # `mip run build` becomes `cargo build --releas
 runtime_packages = ["socat"]     # Extra deps beyond what the stack ships.
 
 [defaults]
-profile = "dev"                  # Applied to tasks that set no profile.
 state_key = "dev"                # Tasks sharing a state_key share cached state.
 
 [session]
@@ -50,4 +49,4 @@ Notes:
   never refresh it (`mip update`) unless asked.
 - `inherit_cwd` matters for cargo tasks in workspaces: without it the task
   always runs at the repo root.
-- Run `mip check` after editing; it validates packages, stacks, and profiles.
+- Run `mip check` after editing; it validates packages and stacks.

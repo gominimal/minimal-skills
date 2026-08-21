@@ -73,8 +73,8 @@ task on the host.
 
 In a repo with Minimal config or packages, validate and build from in here:
 
-- `min check` lints packages, stacks, and profiles; run it after any config
-  edit and fix everything it reports.
+- `min check` lints packages and stacks; run it after any config edit and
+  fix everything it reports.
 - `min package build <pkg>` runs a full package build.
 - `min package patched-build <pkg>` builds one package against the newest
   available builds of its dependencies; use it as the edit-build inner loop.
