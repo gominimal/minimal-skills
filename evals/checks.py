@@ -218,9 +218,12 @@ def routes_to_sandbox_reference(args: dict, result: Result) -> bool:
     # Declining to guess is the directed behaviour when no shell is available
     # to check with, and it satisfies the same contract: the agent refuses to
     # emit a verb it has not resolved, and defers to the live command list.
+    # The refusal has to be about the command surface. Without that anchor,
+    # "I cannot guess the port" passes a check that exists to assert routing.
     declines_to_guess = re.search(
-        r"\b(shouldn.t|should not|won.t|will not|cannot|can.t|not going to)\b[^\n]{0,60}\bguess\b"
-        r"|\bguess(ing)?\b[^\n]{0,40}\b(verb|subcommand|command)\b"
+        r"\b(shouldn.t|should not|won.t|will not|cannot|can.t|not going to)\b"
+        r"[^\n]{0,60}\bguess\b[^\n]{0,40}\b(verb|subcommand|command|syntax)\b"
+        r"|\bguess(ing)?\b[^\n]{0,40}\b(verb|subcommand|command|syntax)\b"
         r"|\bresolve\b[^\n]{0,40}\b(command list|current command|its command|subcommand)",
         result.response_text,
         FLAGS,
