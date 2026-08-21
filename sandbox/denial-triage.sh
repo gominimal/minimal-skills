@@ -50,19 +50,21 @@ if command -v jq > /dev/null 2>&1; then
   failure=$(jq -r '[(.error // empty)] + [(.tool_response // empty) | .. | strings] | join("\n")' <<< "$payload")
   signature='command not found|cannot run interactive tasks'
 else
-  # No JSON parser. Going silent here would disable the hook in most
-  # sandboxes, since `base` ships no jq, so drop `tool_input` out of the
-  # payload with sed instead and scan what is left. `base` does ship sed.
-  # The object is flat for Bash ({command, description}) and escaped quotes
-  # inside it are \" rather than a bare brace, so [^{}]* spans the value;
-  # a command carrying a literal brace (awk '{print}') leaves the object in
-  # place, which is why the signature is anchored as well.
+  # No JSON parser. Disabling the hook outright would be the safe-but-useless
+  # option, since `base` ships no jq and most sandboxes would then never see
+  # the guidance, so drop `tool_input` with sed (`base` does ship sed) and
+  # scan what is left. The object is flat for Bash ({command, description})
+  # and quotes inside it arrive escaped as \", so [^{}]* spans the value.
   failure=$(sed -E 's/"tool_input"[[:space:]]*:[[:space:]]*\{[^{}]*\}//g' <<< "$payload")
-  # Anchored: bash writes "bash: htop: command not found", with a colon
-  # before the phrase, while a command that merely mentions it does not.
-  # The interactive-task refusal needs no anchor; a command containing that
-  # whole sentence is not a realistic false positive.
-  signature=': command not found|cannot run interactive tasks'
+  # A command carrying a literal brace (awk '{print}') defeats that strip and
+  # leaves the object in place. Without a parser there is then no way to tell
+  # command text from result text, so narrow the scope to nothing and stay
+  # silent rather than risk misreading the failure. This is the only case the
+  # hook gives up on, and jq removes it entirely.
+  case $failure in
+    *'"tool_input"'*) exit 0 ;;
+  esac
+  signature='command not found|cannot run interactive tasks'
 fi
 
 if ! grep -qiE "$signature" <<< "$failure"; then
