@@ -1,8 +1,7 @@
 # Annotated task recipes
 
-Full schema: https://minimal.dev/docs/reference/tasks
-Run with `mip run <task>` (Linux, one-shot) or `min task run <task>` in a
-session.
+Worked examples of how task keys compose. The schema is authoritative for
+every key, type, and default: https://minimal.dev/docs/reference/tasks
 
 ## Arguments: types, enums, defaults, interpolation
 
@@ -17,9 +16,8 @@ args.env = ["staging", "prod"]           # Enum: only these values accepted.
 exec = "railway up --environment %{env}"
 ```
 
-`mip run greeter --name world` fills `%{name}`. Types: `"string"`,
-`"number"`, `"boolean"`, `"Array string"` (and other Array forms), or an
-enum written `["a", "b"]`.
+Running the task with `--name world` fills `%{name}`. The schema lists the
+accepted arg types.
 
 ## exec vs bash vs echo
 
@@ -48,8 +46,9 @@ state_key = "integration"                # Cache state across runs.
 inherit_cwd = true                       # Start where invoked, not repo root.
 ```
 
-Patch paths must be absolute or start with `~/`; missing host paths are
-created empty. Modes: `"read-only"`/`"ro"` or `"read-write"`/`"rw"`.
+Map host paths read-only unless the task genuinely writes them. An inherited
+env var is readable by everything the task runs, so inherit sparingly and
+prefer short-lived tokens.
 
 ## Interactive shells and TUIs
 
@@ -60,4 +59,5 @@ packages = ["base", "git", "nano"]
 exec = "bash -l"
 ```
 
-After adding or editing any task, validate the file with `mip check`.
+After adding or editing any task, validate the file and fix everything the
+check reports.
