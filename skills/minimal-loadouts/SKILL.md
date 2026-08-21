@@ -1,6 +1,6 @@
 ---
 name: minimal-loadouts
-description: Use when personalizing Minimal sessions with loadouts, e.g. bringing an editor, dotfiles, shell config, env vars, or personal tooling into min sessions without touching the project's committed minimal.toml, authoring or fixing a loadout TOML file, selecting loadouts at activation, or resolving loadout composition conflicts. Do not use for the project-wide minimal.toml (minimal-config owns that), session lifecycle basics (minimal-setup), or dotfile management outside Minimal.
+description: Use when personalizing Minimal sessions with loadouts, e.g. bringing an editor, dotfiles, shell config, env vars, or personal tooling into min sessions without touching the project's committed minimal.toml, authoring or fixing a loadout TOML file, selecting loadouts at activation, or resolving loadout conflicts. Do not use for the project-wide minimal.toml (minimal-config), session lifecycle (minimal-setup), or dotfiles outside Minimal: your own machine's .zshrc, stow, or devcontainers.
 ---
 
 # Minimal loadouts
