@@ -1,11 +1,21 @@
 #!/bin/bash
-# PostToolUseFailure (Bash) hook: when a command inside a Minimal sandbox
-# fails in a way that usually means "missing tool" or "host-only operation",
-# point the agent at the right recovery route instead of a host package
-# manager or a retry loop.
+# Bash tool hook: when a command inside a Minimal sandbox fails in a way that
+# usually means "missing tool" or "host-only operation", point the agent at
+# the right recovery route instead of a host package manager or a retry loop.
 #
-# PostToolUse fires only after a tool *succeeds*, so this must stay on
-# PostToolUseFailure; on the success event it would never run.
+# Registered on BOTH PostToolUse and PostToolUseFailure, because which one a
+# `command not found` (exit 127) delivers is not something we want to bet the
+# hook on. The reference defines PostToolUse as "after a tool completes
+# successfully" and PostToolUseFailure as "after a tool call fails", and its
+# PostToolUseFailure example is a Bash `npm test` exiting 1 with
+# `error: "Exit code 1\n..."`, which reads as non-zero exits landing on the
+# failure event. If instead the Bash tool reports a non-zero exit as a
+# successful tool call, the PostToolUse registration catches it. Handling
+# both costs one extra entry and removes the guess.
+#
+# The two events carry the failure text in different places, so read the
+# event name and pick the matching field, and echo that same event name back
+# in hookSpecificOutput.
 #
 # Carries no `min` syntax on purpose: the helper's verbs change between
 # daemon releases, and a stale command here would be worse than none. It
@@ -22,13 +32,24 @@ set -euo pipefail
 
 payload=$(cat)
 
+# Echo back whichever event actually fired; a mismatched hookEventName is
+# ignored. Grep rather than jq so this still holds without a JSON parser.
+if grep -q '"hook_event_name"[[:space:]]*:[[:space:]]*"PostToolUseFailure"' <<< "$payload"; then
+  event=PostToolUseFailure
+else
+  event=PostToolUse
+fi
+
 # Match the failure text alone. `tool_input.command` also rides in the
 # payload, so scanning the whole thing lets a failing command whose own text
 # carries a signature (`grep "command not found" build.log`) trigger a nudge
-# that misreads the failure. jq is not guaranteed inside a sandbox; without
-# it, fall back to the whole payload rather than going silent.
+# that misreads the failure. PostToolUseFailure carries it in `.error`,
+# PostToolUse in `.tool_response`, whose shape is per-tool and undocumented
+# for Bash, so take every string in it rather than naming a field. jq is not
+# guaranteed inside a sandbox; without it, fall back to the whole payload
+# rather than going silent.
 if command -v jq > /dev/null 2>&1; then
-  failure=$(jq -r '.error // ""' <<< "$payload")
+  failure=$(jq -r '[(.error // empty)] + [(.tool_response // empty) | .. | strings] | join("\n")' <<< "$payload")
 else
   failure=$payload
 fi
@@ -60,4 +81,4 @@ context="${context//\\/\\\\}"
 context="${context//\"/\\\"}"
 context="${context//$'\n'/\\n}"
 
-printf '{"hookSpecificOutput":{"hookEventName":"PostToolUseFailure","additionalContext":"%s"}}\n' "$context"
+printf '{"hookSpecificOutput":{"hookEventName":"%s","additionalContext":"%s"}}\n' "$event" "$context"
