@@ -51,14 +51,17 @@ if command -v jq > /dev/null 2>&1; then
   signature='command not found|cannot run interactive tasks'
 else
   # No JSON parser. Going silent here would disable the hook in most
-  # sandboxes, since `base` ships no jq, so keep scanning the whole payload
-  # but demand the shell's own error shape instead: bash writes
-  # "bash: htop: command not found", with a colon before the phrase, while a
-  # command that merely mentions it (grep "command not found" build.log)
-  # does not. That keeps tool_input.command out of the match without a
-  # parser. The interactive-task refusal needs no such anchor; a command
-  # containing that sentence is not a realistic false positive.
-  failure=$payload
+  # sandboxes, since `base` ships no jq, so drop `tool_input` out of the
+  # payload with sed instead and scan what is left. `base` does ship sed.
+  # The object is flat for Bash ({command, description}) and escaped quotes
+  # inside it are \" rather than a bare brace, so [^{}]* spans the value;
+  # a command carrying a literal brace (awk '{print}') leaves the object in
+  # place, which is why the signature is anchored as well.
+  failure=$(sed -E 's/"tool_input"[[:space:]]*:[[:space:]]*\{[^{}]*\}//g' <<< "$payload")
+  # Anchored: bash writes "bash: htop: command not found", with a colon
+  # before the phrase, while a command that merely mentions it does not.
+  # The interactive-task refusal needs no anchor; a command containing that
+  # whole sentence is not a realistic false positive.
   signature=': command not found|cannot run interactive tasks'
 fi
 
