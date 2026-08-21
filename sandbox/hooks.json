@@ -11,7 +11,7 @@
         ]
       }
     ],
-    "PostToolUse": [
+    "PostToolUseFailure": [
       {
         "matcher": "Bash",
         "hooks": [

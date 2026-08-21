@@ -63,8 +63,10 @@ https://minimal.dev/docs/reference/sandbox-operations
   when stdin is not a TTY, but pass it explicitly so intent is visible.
 - Read session state with `min session list --json` (or `--raw` for bare ids
   one per line). Never parse the human-readable table.
-- `min session attach -c` accepts only `min task run <task>`, not arbitrary
-  commands. Arbitrary commands need an interactive attached shell.
+- `min session attach` opens an interactive shell and takes no command
+  argument. Run a one-off command in an existing session with `min session
+  exec <session> <command>...`, and a declared task with `min task run
+  <task>`. Confirm both against `min session --help` before scripting them.
 - Commits made in a session's workspace come back to the host checkout with
   `git push min://<session>`, run from inside the session.
 

@@ -1,18 +1,20 @@
 #!/bin/bash
-# PostToolUse (Bash) hook: when a command inside a Minimal sandbox fails in a
-# way that usually means "missing tool" or "host-only operation", point the
-# agent at the right recovery route instead of a host package manager or a
-# retry loop.
+# PostToolUseFailure (Bash) hook: when a command inside a Minimal sandbox
+# fails in a way that usually means "missing tool" or "host-only operation",
+# point the agent at the right recovery route instead of a host package
+# manager or a retry loop.
+#
+# PostToolUse fires only after a tool *succeeds*, so this must stay on
+# PostToolUseFailure; on the success event it would never run.
 #
 # Carries no `min` syntax on purpose: the helper's verbs change between
 # daemon releases, and a stale command here would be worse than none. It
 # names the two sources that are always current.
 #
-# Deliberately narrow: it matches only high-confidence signatures in the raw
-# hook payload and stays silent otherwise. The injected text is fixed and
-# never interpolates the payload, so a hostile command result cannot ride
-# this hook into the model's context. No jq dependency; the payload is only
-# pattern-matched, never parsed.
+# Deliberately narrow: it matches only high-confidence signatures and stays
+# silent otherwise. The injected text is fixed and never interpolates the
+# payload, so a hostile command result cannot ride this hook into the
+# model's context.
 set -euo pipefail
 
 # Stay silent outside a Minimal sandbox, where the shim is not installed.
@@ -20,7 +22,18 @@ set -euo pipefail
 
 payload=$(cat)
 
-if ! grep -qiE 'command not found|cannot run interactive tasks' <<< "$payload"; then
+# Match the failure text alone. `tool_input.command` also rides in the
+# payload, so scanning the whole thing lets a failing command whose own text
+# carries a signature (`grep "command not found" build.log`) trigger a nudge
+# that misreads the failure. jq is not guaranteed inside a sandbox; without
+# it, fall back to the whole payload rather than going silent.
+if command -v jq > /dev/null 2>&1; then
+  failure=$(jq -r '.error // ""' <<< "$payload")
+else
+  failure=$payload
+fi
+
+if ! grep -qiE 'command not found|cannot run interactive tasks' <<< "$failure"; then
   exit 0
 fi
 
@@ -47,4 +60,4 @@ context="${context//\\/\\\\}"
 context="${context//\"/\\\"}"
 context="${context//$'\n'/\\n}"
 
-printf '{"hookSpecificOutput":{"hookEventName":"PostToolUse","additionalContext":"%s"}}\n' "$context"
+printf '{"hookSpecificOutput":{"hookEventName":"PostToolUseFailure","additionalContext":"%s"}}\n' "$context"

@@ -14,7 +14,7 @@ present, so they are inert anywhere but inside a Minimal sandbox.
 - `session-primer.sh`: SessionStart hook; injects a short orientation note
   (you are sandboxed, install with `min add`, host commands do not exist).
   Keep it short; detail belongs in the minimal-sandbox skill.
-- `denial-triage.sh`: PostToolUse hook for Bash; on high-confidence failure
+- `denial-triage.sh`: PostToolUseFailure hook for Bash; on high-confidence failure
   signatures (`command not found`, the interactive-task refusal) injects the
   corrective `min` guidance at the moment it is needed.
 - `hooks.json`: the hook wiring, with `${CLAUDE_PLUGIN_ROOT}/hooks/` paths

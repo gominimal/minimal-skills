@@ -30,15 +30,23 @@ _INLINE_CODE_RE = re.compile(r"`([^`\n]+)`")
 _ACTIVATE_RE = re.compile(r"\bmin\s+session\s+activate\b", re.IGNORECASE)
 _UPSTREAM_PIN_RE = re.compile(r"\[upstream\][^\[]*?locked_commit", re.IGNORECASE)
 _HIDDEN_FLAG_RE = re.compile(r"--(?:network|ingress)\b", re.IGNORECASE)
+# Options routinely sit between a package manager and its install verb
+# (`apt-get -y install ripgrep`, `apk --no-cache add jq`), so tolerate them.
+# Only option-shaped tokens, never arbitrary text: a command-line comment
+# such as `# brew is gone, use min add` must still not match.
+_OPTS = r"(?:\s+-{1,2}[^\s]+)*"
 _HOST_INSTALLER_RE = re.compile(
-    r"(?:sudo\s+)?(?:apt(?:-get)?|apk|dnf|yum|brew)\s+(?:install|add)\b"
-    r"|pip3?\s+install\b"
-    r"|npm\s+i(?:nstall)?\s+(?:-g|--global)\b"
-    r"|cargo\s+install\b",
+    rf"(?:sudo\s+)?\b(?:apt(?:-get)?|apk|dnf|yum|brew)\b{_OPTS}\s+(?:install|add)\b"
+    rf"|\bpip3?\b{_OPTS}\s+install\b"
+    rf"|\bnpm\b{_OPTS}\s+i(?:nstall)?\s+(?:-g|--global)\b"
+    rf"|\bcargo\b{_OPTS}\s+install\b",
     re.IGNORECASE,
 )
+# Any `mip` invocation is host-only, including option-only forms like
+# `mip --help`. The lookbehind keeps the docs slug `.../reference/cli-mip`
+# from reading as an invocation; citing the reference is not running it.
 _HOST_ONLY_MIN_RE = re.compile(
-    r"\bmin\s+(?:session|init|ls|stop|bug|loadout|update)\b|\bmip\s+[a-z]",
+    r"\bmin\s+(?:session|init|ls|stop|bug|loadout|update)\b|(?<![\w/-])mip\b",
     re.IGNORECASE,
 )
 

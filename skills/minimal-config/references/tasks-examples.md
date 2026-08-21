@@ -39,16 +39,19 @@ echo = "Docs live at https://minimal.dev/docs/reference/minimal-dot-toml"
 [tasks.integration]
 packages = ["postgresql-client"]         # Only this task gets psql.
 env_vars.RAILS_ENV = "test"              # Fixed value.
-env_vars.GITHUB_TOKEN = { inherit = true }  # Copied from the host env.
-patches.dir."~/.aws" = "read-only"       # Host dir, read-only mapping.
-patches.file."~/.netrc" = "read-only"    # Single host file.
+env_vars.TEST_SHARD = { inherit = true }  # Copied from the host env.
+patches.dir."~/.cache/test-fixtures" = "read-only"   # Host dir, read-only.
+patches.file."~/.config/myapp/test.toml" = "read-only"  # Single host file.
 state_key = "integration"                # Cache state across runs.
 inherit_cwd = true                       # Start where invoked, not repo root.
 ```
 
-Map host paths read-only unless the task genuinely writes them. An inherited
-env var is readable by everything the task runs, so inherit sparingly and
-prefer short-lived tokens.
+Map host paths read-only unless the task genuinely writes them. `read-only`
+stops the task writing the path, not reading it, so never map a credential
+store such as `~/.aws`, `~/.ssh`, or `~/.netrc` into a task: every command
+the task runs can read it. An inherited env var is readable the same way, so
+inherit sparingly, and when a task genuinely needs a token, pass a scoped,
+short-lived one rather than inheriting a long-lived credential.
 
 ## Interactive shells and TUIs
 
