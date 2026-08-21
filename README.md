@@ -28,6 +28,7 @@ Or run `/plugin` inside the Claude Code REPL and install `minimal` from the
 | Skill | What it does |
 |---|---|
 | `minimal-setup` | Get a repo running in the Minimal developer system: install, `min init`, session creation and activation. |
+| `minimal-sandbox` | Work correctly from inside a sandbox (session or task sandbox): the in-sandbox `min` helper, installing and persisting packages, task limits, what survives where. |
 | `minimal-config` | Author and validate `minimal.toml`: packages, profiles, stacks, upstream pinning, `mip check`/`min check`. |
 | `minimal-loadouts` | Personalize sessions with per-developer loadouts: editors, dotfiles, env vars, patches, composition rules. |
 | `minimal-networking` | Session networking: the routing proxy, ingress, and reaching the host. Experimental. |
@@ -75,6 +76,7 @@ just report           # open the latest JSON report
 ```
 .claude-plugin/       plugin and marketplace manifests
 skills/               one directory per skill, each with a SKILL.md
+sandbox/              hook assets for the in-sandbox build (gominimal/pkgs)
 evals/                eval harness: runner.py, checks.py, cases/, SCHEMA.md
 .github/workflows/    pr-evals.yml (PR gate), nightly-evals.yml (nightly tier)
 justfile              local dev-loop recipes
@@ -87,6 +89,11 @@ justfile              local dev-loop recipes
 - `minimal-networking` is experimental: its surface has no public docs (that
   is intentional), so it carries inline knowledge and may change or break
   without notice.
+- Sandboxed Claude Code sessions get this content through the
+  `claude-code-minimal-plugin` package in `gominimal/pkgs`, which fetches a
+  tagged snapshot of this repo and assembles `skills/minimal-sandbox/` plus
+  the `sandbox/` hooks into an in-sandbox plugin. A marketplace install on a
+  developer host ships the skills only, never the hooks.
 
 ## License
 

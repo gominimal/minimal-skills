@@ -7,7 +7,7 @@
     {
       "name": "minimal",
       "source": "./",
-      "description": "Skills for the Minimal developer system: project setup and sessions, minimal.toml authoring, per-developer loadouts, diagnostics, and the experimental networking/preview surface."
+      "description": "Skills for the Minimal developer system: project setup and sessions, working inside a sandbox, minimal.toml authoring, per-developer loadouts, diagnostics, and the experimental networking/preview surface."
     }
   ]
 }

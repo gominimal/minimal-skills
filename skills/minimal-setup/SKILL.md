@@ -1,6 +1,6 @@
 ---
 name: minimal-setup
-description: Use when the user wants to install Minimal, set up a project with min init, create/activate/attach/rename/destroy sandboxed min sessions, develop a repo in a Minimal sandbox, script sessions in CI, or orient an agent running inside a session. Do not use for deep minimal.toml package/task authoring (minimal-config), personalizing sessions with loadouts (minimal-loadouts), session networking or preview URLs (minimal-networking), diagnostics bundles (minimal-diag), or non-Minimal sandboxes like venv, Docker, or direnv.
+description: Use when the user wants to install Minimal, set up a project with min init, create/activate/attach/rename/destroy sandboxed min sessions, develop a repo in a Minimal sandbox, or script sessions in CI. Do not use for working inside a session or task sandbox (minimal-sandbox), minimal.toml authoring (minimal-config), personalizing sessions with loadouts (minimal-loadouts), session networking or preview URLs (minimal-networking), diagnostics bundles (minimal-diag), or non-Minimal sandboxes like venv, Docker, or direnv.
 ---
 
 # Minimal setup and sessions
@@ -63,19 +63,16 @@ https://minimal.dev/docs/reference/sandbox-operations
   when stdin is not a TTY, but pass it explicitly so intent is visible.
 - Read session state with `min session list --json` (or `--raw` for bare ids
   one per line). Never parse the human-readable table.
-
-## Inside a session (for agents running in one)
-
-- The project lands in `/workbench`. Work there.
-- Session `/tmp` is EPHEMERAL between attaches. Stage anything that must
-  survive under `/workbench`, never in `/tmp`.
-- Run the project's declared tasks with `min run <task>`.
 - `min session attach -c` accepts only `min run <task>`, not arbitrary
   commands. Arbitrary commands need an interactive attached shell.
-- Add a missing tool mid-session with `min add <package>`; it installs into
-  the running session and records the package in the project's `[session]`
-  list.
-- Push work back to the host with `git push min://<session>`.
+
+## Inside a session
+
+Everything an agent does from inside a session or task sandbox (installing
+tools with the in-sandbox `min` helper, persisting dependencies, task
+limits, what survives where) belongs to the minimal-sandbox skill; hand off
+there. The in-sandbox helper is a different tool from the host `min` CLI:
+https://minimal.dev/docs/reference/sandbox-operations
 
 To run a coding agent like Claude Code inside a session, add its package to
 `[session] packages` and pass credentials with `[session.vars]` entries using

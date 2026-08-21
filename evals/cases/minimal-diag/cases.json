@@ -113,6 +113,20 @@
     "functional_asserts": []
   },
   {
+    "id": "diag-013",
+    "prompt": "You are an agent inside a Minimal session; sessions on this machine are flaky and the user wants Minimal diagnostics collected for the dev team. What do you do?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "capability",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      "min_bug_suggested",
+      { "name": "response_matches", "args": { "pattern": "host" } }
+    ],
+    "functional_asserts": []
+  },
+  {
     "id": "diag-009",
     "prompt": "my pytest suite is failing, debug it",
     "should_trigger": false,

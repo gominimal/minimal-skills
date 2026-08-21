@@ -171,32 +171,6 @@
     "functional_asserts": []
   },
   {
-    "id": "setup-008",
-    "prompt": "You are running inside a Minimal session. Where did my project files end up, and where should you keep scratch files so they survive detach and reattach?",
-    "should_trigger": true,
-    "tier": "text",
-    "suite": "capability",
-    "trials": null,
-    "allowed_tools": [
-      "Skill"
-    ],
-    "expected_checks": [
-      {
-        "name": "response_matches",
-        "args": {
-          "pattern": "/workbench"
-        }
-      },
-      {
-        "name": "response_matches",
-        "args": {
-          "pattern": "ephemeral|wiped|not persist|lost between"
-        }
-      }
-    ],
-    "functional_asserts": []
-  },
-  {
     "id": "setup-009",
     "prompt": "Can I run an arbitrary shell command in my minimal session non-interactively, like min session attach -c 'make test'?",
     "should_trigger": true,

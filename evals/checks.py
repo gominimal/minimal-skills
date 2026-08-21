@@ -30,6 +30,17 @@ _INLINE_CODE_RE = re.compile(r"`([^`\n]+)`")
 _ACTIVATE_RE = re.compile(r"\bmin\s+session\s+activate\b", re.IGNORECASE)
 _UPSTREAM_PIN_RE = re.compile(r"\[upstream\][^\[]*?locked_commit", re.IGNORECASE)
 _HIDDEN_FLAG_RE = re.compile(r"--(?:network|ingress)\b", re.IGNORECASE)
+_HOST_INSTALLER_RE = re.compile(
+    r"(?:sudo\s+)?(?:apt(?:-get)?|apk|dnf|yum|brew)\s+(?:install|add)\b"
+    r"|pip3?\s+install\b"
+    r"|npm\s+i(?:nstall)?\s+(?:-g|--global)\b"
+    r"|cargo\s+install\b",
+    re.IGNORECASE,
+)
+_HOST_ONLY_MIN_RE = re.compile(
+    r"\bmin\s+(?:session|init|ls|stop|bug|loadout|update)\b|\bmip\s+[a-z]",
+    re.IGNORECASE,
+)
 
 
 @dataclass
@@ -164,6 +175,24 @@ def no_hidden_flag_leak(args: dict, result: Result) -> bool:
     return _HIDDEN_FLAG_RE.search(result.response_text) is None
 
 
+def prefers_min_add(args: dict, result: Result) -> bool:
+    """In-sandbox tool installation goes through `min add`: the response
+    recommends it, and no command line (fenced block or inline command)
+    invokes a host package-manager install (apt/apk/dnf/yum/brew install,
+    system pip install, global npm install, cargo install)."""
+    if re.search(r"\bmin\s+add\b", result.response_text, FLAGS) is None:
+        return False
+    return not any(_HOST_INSTALLER_RE.search(line) for line in _command_lines(result.response_text))
+
+
+def no_host_only_commands(args: dict, result: Result) -> bool:
+    """Response does NOT reach for host-only Minimal commands (`min session`,
+    `min init`, `min ls`, `min stop`, `min bug`, `min loadout`, `min update`,
+    or any `mip` invocation). Blunt whole-text scan; use it only on cases
+    where mentioning a host command is never warranted."""
+    return _HOST_ONLY_MIN_RE.search(result.response_text) is None
+
+
 def correct_proxy_port(args: dict, result: Result) -> bool:
     return re.search(r"\b7654\b", result.response_text, FLAGS) is not None
 
@@ -187,6 +216,8 @@ CHECK_REGISTRY: dict[str, Check] = {
     "mip_check_suggested": mip_check_suggested,
     "min_bug_suggested": min_bug_suggested,
     "no_hidden_flag_leak": no_hidden_flag_leak,
+    "prefers_min_add": prefers_min_add,
+    "no_host_only_commands": no_host_only_commands,
     "correct_proxy_port": correct_proxy_port,
     "host_alias_ip_correct": host_alias_ip_correct,
 }

@@ -1,0 +1,188 @@
+[
+  {
+    "id": "sandbox-001",
+    "prompt": "You are working inside a Minimal sandbox session. You need ripgrep but rg is not installed. Install it.",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      "prefers_min_add",
+      "no_host_only_commands",
+      "docs_urls_valid"
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "sandbox-002",
+    "prompt": "Inside a Minimal sandbox: `jq: command not found`. What is the right way to get jq in here?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      "prefers_min_add",
+      { "name": "response_matches", "args": { "pattern": "min (search|add)" } }
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "sandbox-003",
+    "prompt": "You are an agent in a Minimal task sandbox (the host launched `min run test`). If you run a bare `min add gcc`, does minimal.toml change?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      { "name": "response_matches", "args": { "pattern": "ephemeral|not modif|not record|does not (modify|record|change|touch)|records nothing" } },
+      { "name": "response_matches", "args": { "pattern": "--build|--runtime" } }
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "sandbox-004",
+    "prompt": "Inside a Minimal session you ran a bare `min add postgres` and it installed fine. Did anything get recorded for your teammates?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      { "name": "response_matches", "args": { "pattern": "\\[session\\]|packages list|minimal\\.toml" } }
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "sandbox-005",
+    "prompt": "From inside a Minimal sandbox, run the project's shell task. minimal.toml declares it with interactive = true.",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      { "name": "response_matches", "args": { "pattern": "interactive" } },
+      { "name": "response_matches", "args": { "pattern": "host" } },
+      { "name": "response_matches", "args": { "pattern": "not supported|cannot|can't|structural" } }
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "sandbox-006",
+    "prompt": "You are running inside a Minimal session. Where did my project files end up, and where should you keep scratch files so they survive detach and reattach?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      { "name": "response_matches", "args": { "pattern": "/workbench" } },
+      { "name": "response_matches", "args": { "pattern": "ephemeral|wiped|not persist|lost between" } }
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "sandbox-007",
+    "prompt": "Inside a Minimal sandbox, `min session list` fails with an unknown command error. Why, and what should you do?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      { "name": "response_matches", "args": { "pattern": "host" } },
+      { "name": "response_matches", "args": { "pattern": "different tool|shares its name|host[- ]only|on the host" } },
+      "docs_urls_valid"
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "sandbox-008",
+    "prompt": "You are inside a Minimal sandbox and unsure which subcommands this min helper actually supports. What is the authoritative way to find out?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "capability",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      { "name": "response_matches", "args": { "pattern": "no argument|no subcommand|without (any )?argument|by itself|bare|alone" } }
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "sandbox-009",
+    "prompt": "Inside a Minimal session, how do you hand the commits you made back to the host checkout?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      { "name": "response_matches", "args": { "pattern": "git push min://" } }
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "sandbox-010",
+    "prompt": "You are inside a Minimal sandbox in a packaging repo and just edited packages/foo/build.ncl. Validate it and rebuild just that package.",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "capability",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      { "name": "response_matches", "args": { "pattern": "min check" } },
+      { "name": "response_matches", "args": { "pattern": "patched-build|package build" } }
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "sandbox-012",
+    "prompt": "Inside a Minimal session your additions to ~/.bashrc never take effect in new attach shells. Why?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "capability",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      { "name": "response_matches", "args": { "pattern": "noprofile|no rc|does not source|never sourced|no startup files|loadout" } }
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "sandbox-013",
+    "prompt": "Install ripgrep on my Ubuntu server.",
+    "should_trigger": false,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [],
+    "functional_asserts": []
+  },
+  {
+    "id": "sandbox-014",
+    "prompt": "My Docker build fails at apt-get install; fix the Dockerfile.",
+    "should_trigger": false,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [],
+    "functional_asserts": []
+  },
+  {
+    "id": "sandbox-015",
+    "prompt": "pnpm install fails with EACCES on my laptop; fix my npm permissions.",
+    "should_trigger": false,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [],
+    "functional_asserts": []
+  }
+]
