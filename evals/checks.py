@@ -43,10 +43,11 @@ _HOST_INSTALLER_RE = re.compile(
     re.IGNORECASE,
 )
 # Any `mip` invocation is host-only, including option-only forms like
-# `mip --help`. The lookbehind keeps the docs slug `.../reference/cli-mip`
-# from reading as an invocation; citing the reference is not running it.
+# `mip --help` and absolute ones like `/usr/bin/mip`. The lookbehind excludes
+# only a hyphen, which keeps the docs slug `.../reference/cli-mip` from
+# reading as an invocation; citing the reference is not running it.
 _HOST_ONLY_MIN_RE = re.compile(
-    r"\bmin\s+(?:session|init|ls|stop|bug|loadout|update)\b|(?<![\w/-])mip\b",
+    r"\bmin\s+(?:session|init|ls|stop|bug|loadout|update)\b|(?<![\w-])mip\b",
     re.IGNORECASE,
 )
 
@@ -218,13 +219,19 @@ def routes_to_sandbox_reference(args: dict, result: Result) -> bool:
     # Declining to guess is the directed behaviour when no shell is available
     # to check with, and it satisfies the same contract: the agent refuses to
     # emit a verb it has not resolved, and defers to the live command list.
-    # The refusal has to be about the command surface. Without that anchor,
-    # "I cannot guess the port" passes a check that exists to assert routing.
+    # Two things have to hold, or the branch waves through responses that are
+    # not routing at all: the refusal must be negated ("keep guessing the
+    # command" is the opposite of the contract) and it must be about the
+    # command surface ("I cannot guess the port" is a different subject).
+    # `don't` and `never` carry most real refusals, so the negation list has
+    # to be wider than the modal verbs.
     declines_to_guess = re.search(
-        r"\b(shouldn.t|should not|won.t|will not|cannot|can.t|not going to)\b"
-        r"[^\n]{0,60}\bguess\b[^\n]{0,40}\b(verb|subcommand|command|syntax)\b"
-        r"|\bguess(ing)?\b[^\n]{0,40}\b(verb|subcommand|command|syntax)\b"
-        r"|\bresolve\b[^\n]{0,40}\b(command list|current command|its command|subcommand)",
+        r"\b(?:shouldn.t|should not|won.t|will not|cannot|can.t|do(?:es)?n.t"
+        r"|do not|never|avoid|without|not going to|refuse to|decline to)\b"
+        r"[^\n]{0,60}\bguess(?:ing)?\b[^\n]{0,40}\b(?:verb|subcommand|command|syntax)\b"
+        # Affirmative routing needs no negation: resolving the command list is
+        # itself the directed behaviour, not a refusal to do something.
+        r"|\bresolve\b[^\n]{0,40}\b(?:command list|current command|its command|subcommand)\b",
         result.response_text,
         FLAGS,
     )
