@@ -40,6 +40,8 @@ https://minimal.dev/docs/reference/minimal-dot-toml
   hash); `min init` writes one, and an unpinned config does not resolve.
 - Hand-author only when detection picks wrong or the layout is unusual, and
   still finish with `mip check` (Linux) or in-session `min check`.
+- `min init` and the whole `mip` CLI are host-side commands; from inside a
+  sandbox use the in-sandbox `min` helper instead (minimal-sandbox skill).
 
 ## Sections, one line each
 
@@ -58,8 +60,9 @@ https://minimal.dev/docs/reference/minimal-dot-toml
 - Packages are the unit of software: project-local ones are Nickel build
   specs in `packages/<name>/build.ncl`, see
   https://minimal.dev/docs/reference/build-specs
-- Profiles are reusable task customizations in `profiles/<name>/profile.ncl`,
-  see https://minimal.dev/docs/concepts/profiles
+- Profiles are reusable task customizations in `profiles/<name>/profile.ncl`.
+  The profiles concepts page has been removed from the published docs; do
+  not cite a URL for profiles until one returns.
 
 ## Where a package goes
 
