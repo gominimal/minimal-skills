@@ -106,7 +106,8 @@ Named (no args):
 | `mip_check_suggested` | response suggests `mip check` (or in-session `min check`, the macOS path) to validate config |
 | `min_bug_suggested` | response suggests `min bug` for diagnostics |
 | `no_hidden_flag_leak` | response does NOT recommend `--network` or `--ingress` (use on setup/config cases; networking cases simply omit it) |
-| `prefers_min_add` | response recommends `min add`, and no command line invokes a host package-manager install (apt/apk/dnf/yum/brew install, system pip install, global npm install, cargo install) |
+| `no_host_package_manager` | no command line invokes a host package-manager install (apt/apk/dnf/yum/brew install, system pip install, global npm install, cargo install) |
+| `routes_to_sandbox_reference` | response resolves the in-sandbox command surface from a live source: run bare `min`, or cite the sandbox-operations reference. Prefer this over asserting specific `min` syntax, which changes between daemon releases |
 | `no_host_only_commands` | response does NOT mention host-only Minimal commands (`min session/init/ls/stop/bug/loadout/update`, any `mip`); blunt whole-text scan, use only on cases where a host command is never warranted |
 | `correct_proxy_port` | networking answers use port 7654 for the routing proxy |
 | `host_alias_ip_correct` | response gives `100.64.255.254` for reaching the host from inside a session |

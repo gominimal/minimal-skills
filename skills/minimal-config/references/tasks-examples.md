@@ -1,7 +1,8 @@
 # Annotated task recipes
 
 Full schema: https://minimal.dev/docs/reference/tasks
-Run with `mip run <task>` (Linux, one-shot) or `min run <task>` in a session.
+Run with `mip run <task>` (Linux, one-shot) or `min task run <task>` in a
+session.
 
 ## Arguments: types, enums, defaults, interpolation
 

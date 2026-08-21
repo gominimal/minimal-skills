@@ -184,7 +184,7 @@
       {
         "name": "response_matches",
         "args": {
-          "pattern": "min run"
+          "pattern": "min (task )?run"
         }
       }
     ],
@@ -231,6 +231,26 @@
     "functional_asserts": [
       "min session list --json | jq -e '.sessions | length >= 1'"
     ]
+  },
+  {
+    "id": "setup-017",
+    "prompt": "You are an agent working inside a Minimal session and have finished making commits in the workspace. How do you hand them back to the host checkout?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": [
+      "Skill"
+    ],
+    "expected_checks": [
+      {
+        "name": "response_matches",
+        "args": {
+          "pattern": "git push min://"
+        }
+      }
+    ],
+    "functional_asserts": []
   },
   {
     "id": "setup-013",

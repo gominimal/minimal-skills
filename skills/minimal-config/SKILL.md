@@ -24,7 +24,7 @@ https://minimal.dev/docs/reference/minimal-dot-toml
   fix everything it reports: `mip check` on a Linux host, or `min check`
   inside a session on any platform. The full `mip` CLI is Linux-only and
   does not exist on macOS installs; the in-session `min` equivalents
-  (`min check`, `min add`, `min run`) are the macOS path. `mip check --fix`
+  (`min check`, `min add`, `min task run`) are the macOS path. `mip check --fix`
   attempts automatic fixes. CLI details:
   https://minimal.dev/docs/reference/cli-mip and
   https://minimal.dev/docs/reference/sandbox-operations
@@ -72,7 +72,7 @@ Add each package exactly where it is needed, nowhere else:
 | Build-time tool | `[stack] build_packages` | `min add --build <pkg>` |
 | Runtime library | `[stack] runtime_packages` | `min add --runtime <pkg>` |
 | Every dev session | `[session] packages` | `min add --session <pkg>` |
-| One task only | `[tasks.<name>] packages` | `min add --task <name> <pkg>` |
+| One task only | `[tasks.<name>] packages` | edit the section directly |
 
 ## Tasks
 
@@ -101,8 +101,8 @@ bash = "echo Hello %{name}"
 - `env_vars.NAME = "value"` sets a variable; `{ inherit = true }` passes the
   host value through. `patches` maps host files or dirs into the task; map
   them `"read-only"` unless the task must write them.
-- Run tasks with `mip run <task>` (one-shot sandbox, Linux) or `min run
-  <task>` from inside a session on any platform.
+- Run tasks with `mip run <task>` (one-shot sandbox, Linux) or `min task
+  run <task>` from inside a session on any platform.
 - Full task schema: https://minimal.dev/docs/reference/tasks
 
 ## Session block

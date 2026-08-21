@@ -175,14 +175,29 @@ def no_hidden_flag_leak(args: dict, result: Result) -> bool:
     return _HIDDEN_FLAG_RE.search(result.response_text) is None
 
 
-def prefers_min_add(args: dict, result: Result) -> bool:
-    """In-sandbox tool installation goes through `min add`: the response
-    recommends it, and no command line (fenced block or inline command)
-    invokes a host package-manager install (apt/apk/dnf/yum/brew install,
-    system pip install, global npm install, cargo install)."""
-    if re.search(r"\bmin\s+add\b", result.response_text, FLAGS) is None:
-        return False
+def no_host_package_manager(args: dict, result: Result) -> bool:
+    """No command line (fenced block or inline command) invokes a host
+    package-manager install: apt/apk/dnf/yum/brew install, system pip
+    install, global npm install, or cargo install. Inside a sandbox none of
+    these exist, so recommending one is always wrong."""
     return not any(_HOST_INSTALLER_RE.search(line) for line in _command_lines(result.response_text))
+
+
+def routes_to_sandbox_reference(args: dict, result: Result) -> bool:
+    """The response resolves the in-sandbox command surface from a live
+    source rather than reciting syntax: it tells the reader to run bare
+    `min`, or cites the sandbox-operations reference. The helper's verbs
+    change between daemon releases, so routing is the correct answer and
+    remembered syntax is not."""
+    bare_min = re.search(
+        r"\bbare\b[^\n]{0,20}\bmin\b"
+        r"|\bmin\b[^\n]{0,60}\b(no|without|zero)\b[^\n]{0,20}\b(arg|argument|subcommand|flag)"
+        r"|\brun\b[^\n]{0,20}`?min`?[^\n]{0,20}\b(first|alone|by itself)\b",
+        result.response_text,
+        FLAGS,
+    )
+    reference = re.search(r"minimal\.dev/docs/reference/sandbox-operations", result.response_text, FLAGS)
+    return bool(bare_min or reference)
 
 
 def no_host_only_commands(args: dict, result: Result) -> bool:
@@ -216,7 +231,8 @@ CHECK_REGISTRY: dict[str, Check] = {
     "mip_check_suggested": mip_check_suggested,
     "min_bug_suggested": min_bug_suggested,
     "no_hidden_flag_leak": no_hidden_flag_leak,
-    "prefers_min_add": prefers_min_add,
+    "no_host_package_manager": no_host_package_manager,
+    "routes_to_sandbox_reference": routes_to_sandbox_reference,
     "no_host_only_commands": no_host_only_commands,
     "correct_proxy_port": correct_proxy_port,
     "host_alias_ip_correct": host_alias_ip_correct,
