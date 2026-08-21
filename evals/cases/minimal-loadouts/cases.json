@@ -139,7 +139,7 @@
       {
         "name": "response_matches",
         "args": {
-          "pattern": "not (yet )?(executed|run|wired)|recorded"
+          "pattern": "\\brecord(s|ed|ing)?\\b|\\binert\\b|\\b(not|never|n.t)\\b[^\\n]{0,25}\\b(execut|run|ran|fire|wire)\\w*"
         }
       },
       "docs_urls_valid"
