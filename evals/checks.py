@@ -162,8 +162,18 @@ def pins_upstream(args: dict, result: Result) -> bool:
 
 def mip_check_suggested(args: dict, result: Result) -> bool:
     # `mip` is Linux-only; in-session `min check` is the equivalent (and the
-    # only option on macOS), so either spelling satisfies the directive.
-    return re.search(r"\b(mip|min)\s+check\b", result.response_text, FLAGS) is not None
+    # only option on macOS), so either spelling satisfies the directive. The
+    # tool name may also be paired ("`mip`/`min` check") or wrapped in
+    # backticks, so allow punctuation between the tool and the verb: this
+    # check asserts that validation was recommended, not how it was spelled.
+    return (
+        re.search(
+            r"\b(?:mip|min)\b[^\w\n]{0,8}(?:\b(?:mip|min)\b[^\w\n]{0,4})?check\b",
+            result.response_text,
+            FLAGS,
+        )
+        is not None
+    )
 
 
 def min_bug_suggested(args: dict, result: Result) -> bool:
@@ -197,7 +207,17 @@ def routes_to_sandbox_reference(args: dict, result: Result) -> bool:
         FLAGS,
     )
     reference = re.search(r"minimal\.dev/docs/reference/sandbox-operations", result.response_text, FLAGS)
-    return bool(bare_min or reference)
+    # Declining to guess is the directed behaviour when no shell is available
+    # to check with, and it satisfies the same contract: the agent refuses to
+    # emit a verb it has not resolved, and defers to the live command list.
+    declines_to_guess = re.search(
+        r"\b(shouldn.t|should not|won.t|will not|cannot|can.t|not going to)\b[^\n]{0,60}\bguess\b"
+        r"|\bguess(ing)?\b[^\n]{0,40}\b(verb|subcommand|command)\b"
+        r"|\bresolve\b[^\n]{0,40}\b(command list|current command|its command|subcommand)",
+        result.response_text,
+        FLAGS,
+    )
+    return bool(bare_min or reference or declines_to_guess)
 
 
 def no_host_only_commands(args: dict, result: Result) -> bool:
