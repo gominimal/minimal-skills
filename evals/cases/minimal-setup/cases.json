@@ -9,6 +9,10 @@
     "allowed_tools": [
       "Skill"
     ],
+    "workspace_files": {
+      "Cargo.toml": "[package]\nname = \"demo\"\nversion = \"0.1.0\"\nedition = \"2021\"\n\n[dependencies]\n",
+      "src/main.rs": "fn main() {\n    println!(\"hello\");\n}\n"
+    },
     "expected_checks": [
       "uses_min_init",
       {
