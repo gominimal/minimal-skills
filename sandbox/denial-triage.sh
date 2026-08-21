@@ -45,16 +45,24 @@ fi
 # carries a signature (`grep "command not found" build.log`) trigger a nudge
 # that misreads the failure. PostToolUseFailure carries it in `.error`,
 # PostToolUse in `.tool_response`, whose shape is per-tool and undocumented
-# for Bash, so take every string in it rather than naming a field. jq is not
-# guaranteed inside a sandbox; without it, fall back to the whole payload
-# rather than going silent.
+# for Bash, so take every string in it rather than naming a field.
 if command -v jq > /dev/null 2>&1; then
   failure=$(jq -r '[(.error // empty)] + [(.tool_response // empty) | .. | strings] | join("\n")' <<< "$payload")
+  signature='command not found|cannot run interactive tasks'
 else
+  # No JSON parser. Going silent here would disable the hook in most
+  # sandboxes, since `base` ships no jq, so keep scanning the whole payload
+  # but demand the shell's own error shape instead: bash writes
+  # "bash: htop: command not found", with a colon before the phrase, while a
+  # command that merely mentions it (grep "command not found" build.log)
+  # does not. That keeps tool_input.command out of the match without a
+  # parser. The interactive-task refusal needs no such anchor; a command
+  # containing that sentence is not a realistic false positive.
   failure=$payload
+  signature=': command not found|cannot run interactive tasks'
 fi
 
-if ! grep -qiE 'command not found|cannot run interactive tasks' <<< "$failure"; then
+if ! grep -qiE "$signature" <<< "$failure"; then
   exit 0
 fi
 
