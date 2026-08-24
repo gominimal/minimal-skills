@@ -16,7 +16,9 @@ broken state you cannot explain. Collect the bundle first, then report.
 
 ## Invocation
 
-Run `min bug` in the project directory. It writes
+Run `min bug` in the project directory. It is a host command and does not
+exist inside a sandbox; from a session, have the user run it on the host
+(minimal-sandbox skill). It writes
 `minimal-diag-<timestamp>.tar.zst` to the current directory. Flags:
 
 - `--output <path>` (or `-o`): write the bundle to a specific path instead.

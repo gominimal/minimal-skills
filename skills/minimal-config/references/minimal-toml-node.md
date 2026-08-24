@@ -1,7 +1,7 @@
 # Annotated minimal.toml: pnpm/Node project
 
-The canonical example shape from the schema reference:
-https://minimal.dev/docs/reference/minimal-dot-toml
+A worked example of how the sections compose. The schema is authoritative
+for every key and type: https://minimal.dev/docs/reference/minimal-dot-toml
 
 ```toml
 [upstream]
@@ -10,7 +10,7 @@ branch = "main"
 locked_commit = "d39aaaa581f983d6b3ba5eaaf383485a602f37f0"  # Always present, full hash.
 
 [stack]
-use = "pnpm"                     # `mip run build` runs pnpm install && pnpm build.
+use = "pnpm"                     # The stack supplies the default build command.
 build_packages = ["railway"]     # Extra build-time tool on top of the stack.
 
 [defaults]
@@ -40,9 +40,9 @@ exec = "bash -l"
 
 Notes:
 
-- `min init` detects the pnpm stack from `pnpm-lock.yaml` and proposes most
+- Project init detects the pnpm stack from `pnpm-lock.yaml` and proposes most
   of this automatically; prefer it over hand-writing from scratch.
 - Inherit env vars sparingly and prefer short-lived tokens; an inherited
   value is readable by everything the task runs.
 - Map host files `"read-only"` unless the task genuinely writes them.
-- Validate with `mip check` after every edit.
+- Validate after every edit and fix everything the check reports.

@@ -1,7 +1,7 @@
 # Annotated task recipes
 
-Full schema: https://minimal.dev/docs/reference/tasks
-Run with `mip run <task>` (Linux, one-shot) or `min run <task>` in a session.
+Worked examples of how task keys compose. The schema is authoritative for
+every key, type, and default: https://minimal.dev/docs/reference/tasks
 
 ## Arguments: types, enums, defaults, interpolation
 
@@ -16,9 +16,8 @@ args.env = ["staging", "prod"]           # Enum: only these values accepted.
 exec = "railway up --environment %{env}"
 ```
 
-`mip run greeter --name world` fills `%{name}`. Types: `"string"`,
-`"number"`, `"boolean"`, `"Array string"` (and other Array forms), or an
-enum written `["a", "b"]`.
+Running the task with `--name world` fills `%{name}`. The schema lists the
+accepted arg types.
 
 ## exec vs bash vs echo
 
@@ -40,15 +39,19 @@ echo = "Docs live at https://minimal.dev/docs/reference/minimal-dot-toml"
 [tasks.integration]
 packages = ["postgresql-client"]         # Only this task gets psql.
 env_vars.RAILS_ENV = "test"              # Fixed value.
-env_vars.GITHUB_TOKEN = { inherit = true }  # Copied from the host env.
-patches.dir."~/.aws" = "read-only"       # Host dir, read-only mapping.
-patches.file."~/.netrc" = "read-only"    # Single host file.
+env_vars.TEST_SHARD = { inherit = true }  # Copied from the host env.
+patches.dir."~/.cache/test-fixtures" = "read-only"   # Host dir, read-only.
+patches.file."~/.config/myapp/test.toml" = "read-only"  # Single host file.
 state_key = "integration"                # Cache state across runs.
 inherit_cwd = true                       # Start where invoked, not repo root.
 ```
 
-Patch paths must be absolute or start with `~/`; missing host paths are
-created empty. Modes: `"read-only"`/`"ro"` or `"read-write"`/`"rw"`.
+Map host paths read-only unless the task genuinely writes them. `read-only`
+stops the task writing the path, not reading it, so never map a credential
+store such as `~/.aws`, `~/.ssh`, or `~/.netrc` into a task: every command
+the task runs can read it. An inherited env var is readable the same way, so
+inherit sparingly, and when a task genuinely needs a token, pass a scoped,
+short-lived one rather than inheriting a long-lived credential.
 
 ## Interactive shells and TUIs
 
@@ -59,4 +62,5 @@ packages = ["base", "git", "nano"]
 exec = "bash -l"
 ```
 
-After adding or editing any task, validate the file with `mip check`.
+After adding or editing any task, validate the file and fix everything the
+check reports.

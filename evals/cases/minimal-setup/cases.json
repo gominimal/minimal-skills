@@ -9,6 +9,10 @@
     "allowed_tools": [
       "Skill"
     ],
+    "workspace_files": {
+      "Cargo.toml": "[package]\nname = \"demo\"\nversion = \"0.1.0\"\nedition = \"2021\"\n\n[dependencies]\n",
+      "src/main.rs": "fn main() {\n    println!(\"hello\");\n}\n"
+    },
     "expected_checks": [
       "uses_min_init",
       {
@@ -171,32 +175,6 @@
     "functional_asserts": []
   },
   {
-    "id": "setup-008",
-    "prompt": "You are running inside a Minimal session. Where did my project files end up, and where should you keep scratch files so they survive detach and reattach?",
-    "should_trigger": true,
-    "tier": "text",
-    "suite": "capability",
-    "trials": null,
-    "allowed_tools": [
-      "Skill"
-    ],
-    "expected_checks": [
-      {
-        "name": "response_matches",
-        "args": {
-          "pattern": "/workbench"
-        }
-      },
-      {
-        "name": "response_matches",
-        "args": {
-          "pattern": "ephemeral|wiped|not persist|lost between"
-        }
-      }
-    ],
-    "functional_asserts": []
-  },
-  {
     "id": "setup-009",
     "prompt": "Can I run an arbitrary shell command in my minimal session non-interactively, like min session attach -c 'make test'?",
     "should_trigger": true,
@@ -210,7 +188,7 @@
       {
         "name": "response_matches",
         "args": {
-          "pattern": "min run"
+          "pattern": "min (task )?run"
         }
       }
     ],
@@ -257,6 +235,26 @@
     "functional_asserts": [
       "min session list --json | jq -e '.sessions | length >= 1'"
     ]
+  },
+  {
+    "id": "setup-017",
+    "prompt": "You are an agent working inside a Minimal session and have finished making commits in the workspace. How do you hand them back to the host checkout?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": [
+      "Skill"
+    ],
+    "expected_checks": [
+      {
+        "name": "response_matches",
+        "args": {
+          "pattern": "git push min://"
+        }
+      }
+    ],
+    "functional_asserts": []
   },
   {
     "id": "setup-013",

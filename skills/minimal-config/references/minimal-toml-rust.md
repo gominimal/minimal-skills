@@ -1,20 +1,20 @@
 # Annotated minimal.toml: Rust project
 
-A trimmed real-world config (Minimal builds itself with it). Schema:
-https://minimal.dev/docs/reference/minimal-dot-toml
+A trimmed real-world config (Minimal builds itself with it), shown to
+illustrate how the sections compose. The schema is authoritative for every
+key and type: https://minimal.dev/docs/reference/minimal-dot-toml
 
 ```toml
-[upstream]                       # Pinned source of packages/stacks/profiles.
+[upstream]                       # Pinned source of packages and stacks.
 repo = "https://github.com/gominimal/pkgs"
 branch = "main"
-locked_commit = "d299744531767b2edeb5b0ead2178dadc40bbeed"  # Full hash; only `mip update` rewrites it.
+locked_commit = "d299744531767b2edeb5b0ead2178dadc40bbeed"  # Full hash; only an explicit update rewrites it.
 
 [stack]
-use = "rust"                     # `mip run build` becomes `cargo build --release`.
+use = "rust"                     # The stack supplies the default build command.
 runtime_packages = ["socat"]     # Extra deps beyond what the stack ships.
 
 [defaults]
-profile = "dev"                  # Applied to tasks that set no profile.
 state_key = "dev"                # Tasks sharing a state_key share cached state.
 
 [session]
@@ -47,7 +47,7 @@ cmd = ["/usr/bin/bash", "-l"]
 Notes:
 
 - `locked_commit` makes the supply chain reproducible; never delete it, and
-  never refresh it (`mip update`) unless asked.
+  never refresh it unless the user explicitly asks.
 - `inherit_cwd` matters for cargo tasks in workspaces: without it the task
   always runs at the repo root.
-- Run `mip check` after editing; it validates packages, stacks, and profiles.
+- Validate after editing and fix everything the check reports.

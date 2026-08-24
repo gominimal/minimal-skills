@@ -30,6 +30,26 @@ _INLINE_CODE_RE = re.compile(r"`([^`\n]+)`")
 _ACTIVATE_RE = re.compile(r"\bmin\s+session\s+activate\b", re.IGNORECASE)
 _UPSTREAM_PIN_RE = re.compile(r"\[upstream\][^\[]*?locked_commit", re.IGNORECASE)
 _HIDDEN_FLAG_RE = re.compile(r"--(?:network|ingress)\b", re.IGNORECASE)
+# Options routinely sit between a package manager and its install verb
+# (`apt-get -y install ripgrep`, `apk --no-cache add jq`), so tolerate them.
+# Only option-shaped tokens, never arbitrary text: a command-line comment
+# such as `# brew is gone, use min add` must still not match.
+_OPTS = r"(?:\s+-{1,2}[^\s]+)*"
+_HOST_INSTALLER_RE = re.compile(
+    rf"(?:sudo\s+)?\b(?:apt(?:-get)?|apk|dnf|yum|brew)\b{_OPTS}\s+(?:install|add)\b"
+    rf"|\bpip3?\b{_OPTS}\s+install\b"
+    rf"|\bnpm\b{_OPTS}\s+i(?:nstall)?\s+(?:-g|--global)\b"
+    rf"|\bcargo\b{_OPTS}\s+install\b",
+    re.IGNORECASE,
+)
+# Any `mip` invocation is host-only, including option-only forms like
+# `mip --help` and absolute ones like `/usr/bin/mip`. The lookbehind excludes
+# only a hyphen, which keeps the docs slug `.../reference/cli-mip` from
+# reading as an invocation; citing the reference is not running it.
+_HOST_ONLY_MIN_RE = re.compile(
+    r"\bmin\s+(?:session|init|ls|stop|bug|loadout|update)\b|(?<![\w-])mip\b",
+    re.IGNORECASE,
+)
 
 
 @dataclass
@@ -151,8 +171,18 @@ def pins_upstream(args: dict, result: Result) -> bool:
 
 def mip_check_suggested(args: dict, result: Result) -> bool:
     # `mip` is Linux-only; in-session `min check` is the equivalent (and the
-    # only option on macOS), so either spelling satisfies the directive.
-    return re.search(r"\b(mip|min)\s+check\b", result.response_text, FLAGS) is not None
+    # only option on macOS), so either spelling satisfies the directive. The
+    # tool name may also be paired ("`mip`/`min` check") or wrapped in
+    # backticks, so allow punctuation between the tool and the verb: this
+    # check asserts that validation was recommended, not how it was spelled.
+    return (
+        re.search(
+            r"\b(?:mip|min)\b[^\w\n]{0,8}(?:\b(?:mip|min)\b[^\w\n]{0,4})?check\b",
+            result.response_text,
+            FLAGS,
+        )
+        is not None
+    )
 
 
 def min_bug_suggested(args: dict, result: Result) -> bool:
@@ -162,6 +192,58 @@ def min_bug_suggested(args: dict, result: Result) -> bool:
 def no_hidden_flag_leak(args: dict, result: Result) -> bool:
     """Response does NOT recommend --network or --ingress."""
     return _HIDDEN_FLAG_RE.search(result.response_text) is None
+
+
+def no_host_package_manager(args: dict, result: Result) -> bool:
+    """No command line (fenced block or inline command) invokes a host
+    package-manager install: apt/apk/dnf/yum/brew install, system pip
+    install, global npm install, or cargo install. Inside a sandbox none of
+    these exist, so recommending one is always wrong."""
+    return not any(_HOST_INSTALLER_RE.search(line) for line in _command_lines(result.response_text))
+
+
+def routes_to_sandbox_reference(args: dict, result: Result) -> bool:
+    """The response resolves the in-sandbox command surface from a live
+    source rather than reciting syntax: it tells the reader to run bare
+    `min`, or cites the sandbox-operations reference. The helper's verbs
+    change between daemon releases, so routing is the correct answer and
+    remembered syntax is not."""
+    bare_min = re.search(
+        r"\bbare\b[^\n]{0,20}\bmin\b"
+        r"|\bmin\b[^\n]{0,60}\b(no|without|zero)\b[^\n]{0,20}\b(arg|argument|subcommand|flag)"
+        r"|\brun\b[^\n]{0,20}`?min`?[^\n]{0,20}\b(first|alone|by itself)\b",
+        result.response_text,
+        FLAGS,
+    )
+    reference = re.search(r"minimal\.dev/docs/reference/sandbox-operations", result.response_text, FLAGS)
+    # Declining to guess is the directed behaviour when no shell is available
+    # to check with, and it satisfies the same contract: the agent refuses to
+    # emit a verb it has not resolved, and defers to the live command list.
+    # Two things have to hold, or the branch waves through responses that are
+    # not routing at all: the refusal must be negated ("keep guessing the
+    # command" is the opposite of the contract) and it must be about the
+    # command surface ("I cannot guess the port" is a different subject).
+    # `don't` and `never` carry most real refusals, so the negation list has
+    # to be wider than the modal verbs.
+    declines_to_guess = re.search(
+        r"\b(?:shouldn.t|should not|won.t|will not|cannot|can.t|do(?:es)?n.t"
+        r"|do not|never|avoid|without|not going to|refuse to|decline to)\b"
+        r"[^\n]{0,60}\bguess(?:ing)?\b[^\n]{0,40}\b(?:verb|subcommand|command|syntax)\b"
+        # Affirmative routing needs no negation: resolving the command list is
+        # itself the directed behaviour, not a refusal to do something.
+        r"|\bresolve\b[^\n]{0,40}\b(?:command list|current command|its command|subcommand)\b",
+        result.response_text,
+        FLAGS,
+    )
+    return bool(bare_min or reference or declines_to_guess)
+
+
+def no_host_only_commands(args: dict, result: Result) -> bool:
+    """Response does NOT reach for host-only Minimal commands (`min session`,
+    `min init`, `min ls`, `min stop`, `min bug`, `min loadout`, `min update`,
+    or any `mip` invocation). Blunt whole-text scan; use it only on cases
+    where mentioning a host command is never warranted."""
+    return _HOST_ONLY_MIN_RE.search(result.response_text) is None
 
 
 def correct_proxy_port(args: dict, result: Result) -> bool:
@@ -187,6 +269,9 @@ CHECK_REGISTRY: dict[str, Check] = {
     "mip_check_suggested": mip_check_suggested,
     "min_bug_suggested": min_bug_suggested,
     "no_hidden_flag_leak": no_hidden_flag_leak,
+    "no_host_package_manager": no_host_package_manager,
+    "routes_to_sandbox_reference": routes_to_sandbox_reference,
+    "no_host_only_commands": no_host_only_commands,
     "correct_proxy_port": correct_proxy_port,
     "host_alias_ip_correct": host_alias_ip_correct,
 }

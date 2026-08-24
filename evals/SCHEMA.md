@@ -106,6 +106,9 @@ Named (no args):
 | `mip_check_suggested` | response suggests `mip check` (or in-session `min check`, the macOS path) to validate config |
 | `min_bug_suggested` | response suggests `min bug` for diagnostics |
 | `no_hidden_flag_leak` | response does NOT recommend `--network` or `--ingress` (use on setup/config cases; networking cases simply omit it) |
+| `no_host_package_manager` | no command line invokes a host package-manager install (apt/apk/dnf/yum/brew install, system pip install, global npm install, cargo install), including forms carrying options such as `apt-get -y install` |
+| `routes_to_sandbox_reference` | response resolves the in-sandbox command surface from a live source: run bare `min`, cite the sandbox-operations reference, or explicitly decline to guess a verb when no shell is available to check with. Prefer this over asserting specific `min` syntax, which changes between daemon releases |
+| `no_host_only_commands` | response does NOT mention host-only Minimal commands (`min session/init/ls/stop/bug/loadout/update`, any `mip` invocation including `mip --help`); blunt whole-text scan, use only on cases where a host command is never warranted. Citing the `cli-mip` reference URL is not an invocation and does not fail |
 | `correct_proxy_port` | networking answers use port 7654 for the routing proxy |
 | `host_alias_ip_correct` | response gives `100.64.255.254` for reaching the host from inside a session |
 
@@ -121,6 +124,7 @@ it to this table in the same change that implements it in `checks.py`.
 --tier text|functional|all      default text
 --suite regression|capability|all   default all
 --trials N          default 1
+--retries N         extra attempts for a failed regression case; default 2, 0 disables
 --without-skill     obsolescence mode: skills not installed into the workspace
 --judge             enable the LLM style judge (off by default)
 --model M           model passed to claude CLI; default sonnet
@@ -146,6 +150,21 @@ Pass rules: trial passes if trigger expectation holds and all
 `expected_checks` (and `functional_asserts`) pass. Regression case passes
 only if ALL trials pass; capability case if >=50% of trials pass. Exit code
 is nonzero iff any regression case fails.
+
+A regression case that fails is retried as a whole, `--retries` times (default
+2, so 3 attempts), and passes if any attempt passes. This absorbs model
+nondeterminism without weakening the gate: a genuinely broken case fails every
+attempt, and only failures cost anything, so a green suite never retries.
+Do NOT reach for more `--trials` instead. Under the all-trials-must-pass rule
+that makes a flaky case fail *more* often, and with ~70 regression cases the
+per-case failure probabilities compound: at 99% each, an all-green run is
+roughly a coin flip. Retrying failures is what keeps the gate both strict and
+achievable.
+
+A case that passes only on a retry is reported as `flaky` (in the JSON report
+and listed in the markdown summary). That is not a build failure, but it marks
+an assertion or prompt that is sensitive to nondeterminism and should be
+tightened rather than left to the retry budget.
 
 Infra errors are not verdicts: a claude invocation that itself fails (no
 events, an error result, or nonzero exit with no result event; rate limits

@@ -1,0 +1,253 @@
+[
+  {
+    "id": "sandbox-001",
+    "prompt": "You are working inside a Minimal sandbox session. You need ripgrep but rg is not installed. Install it.",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": [
+      "Skill"
+    ],
+    "expected_checks": [
+      "no_host_package_manager",
+      "routes_to_sandbox_reference",
+      "docs_urls_valid"
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "sandbox-002",
+    "prompt": "Inside a Minimal sandbox: `jq: command not found`. What is the right way to get jq in here?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": [
+      "Skill"
+    ],
+    "expected_checks": [
+      "no_host_package_manager",
+      "routes_to_sandbox_reference"
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "sandbox-003",
+    "prompt": "You are an agent in a Minimal task sandbox. If you install a package here with the min helper, does the project's minimal.toml change?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": [
+      "Skill"
+    ],
+    "expected_checks": [
+      {
+        "name": "response_matches",
+        "args": {
+          "pattern": "task sandbox|session"
+        }
+      },
+      {
+        "name": "response_matches",
+        "args": {
+          "pattern": "ephemeral|n.t persist|not persist|does not (write|record|change|modify)|n.t (write|record|change|modify)|records nothing"
+        }
+      }
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "sandbox-004",
+    "prompt": "You are an agent inside a Minimal sandbox. You just installed a package with the min helper so a build step would work. Is that enough, or is there something else you have to do?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": [
+      "Skill"
+    ],
+    "expected_checks": [
+      {
+        "name": "response_matches",
+        "args": {
+          "pattern": "record|persist|declare"
+        }
+      }
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "sandbox-005",
+    "prompt": "You are an agent inside a Minimal sandbox. I want this project's shell task started from in here. Will that work?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": [
+      "Skill"
+    ],
+    "workspace_files": {
+      "minimal.toml": "[upstream]\nrepo = \"https://github.com/gominimal/pkgs\"\nbranch = \"main\"\nlocked_commit = \"0000000000000000000000000000000000000000\"\n\n[tasks.shell]\ninteractive = true\nexec = \"bash --noprofile -l\"\n\n[tasks.test]\nexec = \"cargo test\"\n"
+    },
+    "expected_checks": [
+      {
+        "name": "response_matches",
+        "args": {
+          "pattern": "interactive"
+        }
+      },
+      {
+        "name": "response_matches",
+        "args": {
+          "pattern": "host"
+        }
+      },
+      {
+        "name": "response_matches",
+        "args": {
+          "pattern": "not supported|cannot|can't|structural"
+        }
+      }
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "sandbox-006",
+    "prompt": "You are an agent running inside a Minimal session, part-way through a task. You need to stage a large intermediate file that must still be there after I detach and reattach. Where do you put it, and where are the project files?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": [
+      "Skill"
+    ],
+    "expected_checks": [
+      {
+        "name": "response_matches",
+        "args": {
+          "pattern": "/workbench"
+        }
+      },
+      {
+        "name": "response_matches",
+        "args": {
+          "pattern": "ephemeral|wiped|not persist|lost between"
+        }
+      }
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "sandbox-007",
+    "prompt": "Inside a Minimal sandbox, a min command I expected to exist fails with an unknown subcommand error. Why, and what should you do?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": [
+      "Skill"
+    ],
+    "expected_checks": [
+      "routes_to_sandbox_reference",
+      {
+        "name": "response_matches",
+        "args": {
+          "pattern": "different tool|shares its name|host[- ]only|on the host|version|changed|release"
+        }
+      }
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "sandbox-008",
+    "prompt": "You are inside a Minimal sandbox and unsure which subcommands this min helper actually supports. What is the authoritative way to find out?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": [
+      "Skill"
+    ],
+    "expected_checks": [
+      "routes_to_sandbox_reference"
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "sandbox-010",
+    "prompt": "You are inside a Minimal sandbox in a packaging repo and just edited a package build spec. How do you validate and rebuild it?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "capability",
+    "trials": null,
+    "allowed_tools": [
+      "Skill"
+    ],
+    "expected_checks": [
+      "routes_to_sandbox_reference",
+      "docs_urls_valid"
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "sandbox-011",
+    "prompt": "You are an agent inside a Minimal session. You wrote shell config into ~/.bashrc so your later commands would pick it up, but it never takes effect. Why?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "capability",
+    "trials": null,
+    "allowed_tools": [
+      "Skill"
+    ],
+    "expected_checks": [
+      {
+        "name": "response_matches",
+        "args": {
+          "pattern": "noprofile|no rc|does not source|never sourced|no startup files|loadout"
+        }
+      }
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "sandbox-012",
+    "prompt": "Install ripgrep on my Ubuntu server.",
+    "should_trigger": false,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": [
+      "Skill"
+    ],
+    "expected_checks": [],
+    "functional_asserts": []
+  },
+  {
+    "id": "sandbox-013",
+    "prompt": "My Docker build fails at apt-get install; fix the Dockerfile.",
+    "should_trigger": false,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": [
+      "Skill"
+    ],
+    "expected_checks": [],
+    "functional_asserts": []
+  },
+  {
+    "id": "sandbox-014",
+    "prompt": "pnpm install fails with EACCES on my laptop; fix my npm permissions.",
+    "should_trigger": false,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": [
+      "Skill"
+    ],
+    "expected_checks": [],
+    "functional_asserts": []
+  }
+]
