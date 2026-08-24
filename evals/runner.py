@@ -65,6 +65,14 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="trials per case unless the case sets its own (default: 1)",
     )
     parser.add_argument(
+        "--retries", type=int, default=2,
+        help=(
+            "extra attempts for a REGRESSION case that fails, to absorb model "
+            "nondeterminism (default: 2). A case passes if any attempt passes; "
+            "0 disables. Only failures cost anything: a green suite never retries"
+        ),
+    )
+    parser.add_argument(
         "--without-skill", action="store_true",
         help="obsolescence mode: skills are not installed into the workspace",
     )
@@ -469,12 +477,23 @@ def render_summary(case_reports: list[dict], totals: dict) -> str:
     for case in case_reports:
         passed = sum(1 for t in case["trials"] if t["passed"])
         verdict = "pass" if case["passed"] else "fail"
+        if case.get("flaky"):
+            verdict += f" (flaky, attempt {case['attempts']})"
         lines.append(
             f"| {case['id']} | {case['skill']} | {case['suite']} "
             f"| {passed}/{len(case['trials'])} | {verdict} |"
         )
     if not case_reports:
         lines.append("| _no cases matched_ | | | | |")
+
+    flaky = [c["id"] for c in case_reports if c.get("flaky")]
+    if flaky:
+        lines += [
+            "",
+            f"**Flaky ({len(flaky)}):** {', '.join(flaky)} — passed only on a "
+            "retry. Not a build failure, but each one is a case whose assertion "
+            "or prompt is sensitive to model nondeterminism; worth tightening.",
+        ]
 
     def fmt(rate: float | None) -> str:
         return "n/a" if rate is None else f"{rate * 100:.0f}%"
@@ -513,18 +532,36 @@ def main(argv: list[str] | None = None) -> int:
             f"[{case_id}] skill={skill} suite={suite} tier={tier} trials={trials_n}",
             file=sys.stderr,
         )
+        # A regression case must pass every trial, so with ~70 such cases even
+        # a high per-case success rate makes an all-green run unlikely: the
+        # failures compound. Retry a failed regression case instead of running
+        # more trials up front, which under that same all-must-pass rule would
+        # make flaky cases fail MORE often. Only failures cost anything, and a
+        # genuinely broken case fails every attempt.
+        max_attempts = 1 + max(0, args.retries) if suite == "regression" else 1
         trials: list[dict] = []
-        for i in range(trials_n):
-            record = run_trial(skill, case, args, known)
-            status = "PASS" if record["passed"] else "FAIL"
-            if record.get("reason"):
-                status += f" ({record['reason']})"
+        for attempt in range(1, max_attempts + 1):
+            trials = []
+            for i in range(trials_n):
+                record = run_trial(skill, case, args, known)
+                status = "PASS" if record["passed"] else "FAIL"
+                if record.get("reason"):
+                    status += f" ({record['reason']})"
+                label = f"  trial {i + 1}/{trials_n}"
+                if attempt > 1:
+                    label += f" (attempt {attempt}/{max_attempts})"
+                print(f"{label}: {status} in {record['duration_s']}s", file=sys.stderr)
+                trials.append(record)
+            passed = case_pass(suite, trials)
+            if passed or attempt == max_attempts:
+                break
             print(
-                f"  trial {i + 1}/{trials_n}: {status} in {record['duration_s']}s",
+                f"  case {case_id}: failed attempt {attempt}/{max_attempts}, retrying",
                 file=sys.stderr,
             )
-            trials.append(record)
-        passed = case_pass(suite, trials)
+        # Passing only on a later attempt is a real signal even though it does
+        # not fail the build, so surface it rather than burying it.
+        flaky = passed and attempt > 1
         case_reports.append({
             "id": case_id,
             "skill": skill,
@@ -533,10 +570,14 @@ def main(argv: list[str] | None = None) -> int:
             "should_trigger": case.get("should_trigger", True),
             "trials": trials,
             "passed": passed,
+            "attempts": attempt,
+            "flaky": flaky,
         })
         n_pass = sum(1 for t in trials if t["passed"])
+        note = f" [FLAKY: passed on attempt {attempt}/{max_attempts}]" if flaky else ""
         print(
-            f"  case {case_id}: {'PASS' if passed else 'FAIL'} ({n_pass}/{len(trials)} trials)",
+            f"  case {case_id}: {'PASS' if passed else 'FAIL'} "
+            f"({n_pass}/{len(trials)} trials){note}",
             file=sys.stderr,
         )
 

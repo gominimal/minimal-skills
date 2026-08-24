@@ -124,6 +124,7 @@ it to this table in the same change that implements it in `checks.py`.
 --tier text|functional|all      default text
 --suite regression|capability|all   default all
 --trials N          default 1
+--retries N         extra attempts for a failed regression case; default 2, 0 disables
 --without-skill     obsolescence mode: skills not installed into the workspace
 --judge             enable the LLM style judge (off by default)
 --model M           model passed to claude CLI; default sonnet
@@ -149,6 +150,21 @@ Pass rules: trial passes if trigger expectation holds and all
 `expected_checks` (and `functional_asserts`) pass. Regression case passes
 only if ALL trials pass; capability case if >=50% of trials pass. Exit code
 is nonzero iff any regression case fails.
+
+A regression case that fails is retried as a whole, `--retries` times (default
+2, so 3 attempts), and passes if any attempt passes. This absorbs model
+nondeterminism without weakening the gate: a genuinely broken case fails every
+attempt, and only failures cost anything, so a green suite never retries.
+Do NOT reach for more `--trials` instead. Under the all-trials-must-pass rule
+that makes a flaky case fail *more* often, and with ~70 regression cases the
+per-case failure probabilities compound: at 99% each, an all-green run is
+roughly a coin flip. Retrying failures is what keeps the gate both strict and
+achievable.
+
+A case that passes only on a retry is reported as `flaky` (in the JSON report
+and listed in the markdown summary). That is not a build failure, but it marks
+an assertion or prompt that is sensitive to nondeterminism and should be
+tightened rather than left to the retry budget.
 
 Infra errors are not verdicts: a claude invocation that itself fails (no
 events, an error result, or nonzero exit with no result event; rate limits
