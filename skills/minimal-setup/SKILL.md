@@ -47,7 +47,8 @@ session sees the network. `--provider` is a global flag, accepted on every
 subcommand.
 
 - `local-minimald` (the default) runs minimald natively on the host. Sessions
-  share the host's network namespace.
+  share the host's network namespace under the default `--network host-net`;
+  `--network own-ip` still isolates a session into its own namespace.
 - `local-minvmd` runs minimald inside the minvmd microVM, behind gvproxy —
   the same topology macOS uses.
 

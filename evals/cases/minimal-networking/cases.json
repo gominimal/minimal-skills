@@ -136,7 +136,8 @@
     "expected_checks": [
       { "name": "response_matches", "args": { "pattern": "502" } },
       { "name": "response_matches", "args": { "pattern": "host\\s?name|session name" } },
-      { "name": "response_not_matches", "args": { "pattern": "hold(s|ing)? the connection|without closing|appear to hang|will hang" } }
+      { "name": "response_matches", "args": { "pattern": "clos(e|es|ed|ing)" } },
+      { "name": "response_not_matches", "args": { "pattern": "without closing the socket|holds the connection open" } }
     ],
     "functional_asserts": []
   },
@@ -222,7 +223,8 @@
     "allowed_tools": ["Skill"],
     "expected_checks": [
       { "name": "response_matches", "args": { "pattern": "local-minvmd" } },
-      { "name": "response_not_matches", "args": { "pattern": "macos[- ]only|only on macos|not available on linux|no equivalent on linux" } }
+      { "name": "response_matches", "args": { "pattern": "local-minimald|host-net|namespace" } },
+      { "name": "response_not_matches", "args": { "pattern": "no equivalent on linux|not available on linux|unavailable on linux" } }
     ],
     "functional_asserts": []
   }

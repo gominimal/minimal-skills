@@ -14,11 +14,13 @@ https://minimal.dev/docs/reference/cli-min (the only relevant public page).
 Do not cite or invent any other minimal.dev URL for networking topics; none
 exists.
 
-On Linux the provider decides the topology: `--provider local-minimald` (the
-default) puts the session in the host's network namespace, `--provider
-local-minvmd` puts it in the minvmd microVM behind gvproxy. macOS has only
-minvmd. Every address claim below depends on which one is in play; see
-minimal-setup for the flag itself.
+On Linux the provider and the network mode decide the topology together.
+`--provider local-minimald` (the default) puts the session in the host's
+network namespace — but only under the default `--network host-net`;
+`--network own-ip` gives the session its own namespace on either provider.
+`--provider local-minvmd` puts it in the minvmd microVM behind gvproxy. macOS
+has only minvmd. Every address claim below depends on which combination is in
+play; see minimal-setup for the flag itself.
 
 ## Preview a dev server running in a session
 
