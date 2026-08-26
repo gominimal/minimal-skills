@@ -17,9 +17,17 @@ import html
 import json
 import re
 import sys
+import urllib.error
+import urllib.parse
 import urllib.request
 
 TIMEOUT_S = 30
+# The canary's whole claim is "this specific page still says what the skill
+# says it says". Hashing anything else — a redirect target, a file: URL from a
+# stray argv — records another document's bytes under a minimal.dev key and the
+# canary goes on reporting green about a page it never read.
+ALLOWED_SCHEME = "https"
+ALLOWED_HOST = "minimal.dev"
 # A tracked reference page has real prose. Anything shorter means the
 # extraction broke (markup changed, error page, empty render) and a hash of
 # it would be a silent false negative — the canary would go quiet exactly
@@ -47,9 +55,43 @@ def extract_text(page: str, url: str) -> str:
     return text
 
 
+def check_url(url: str) -> str:
+    """Return `url` if it addresses a page this canary is allowed to hash."""
+    parsed = urllib.parse.urlsplit(url)
+    if parsed.scheme != ALLOWED_SCHEME or parsed.hostname != ALLOWED_HOST:
+        raise ValueError(
+            f"refusing {url!r}: only {ALLOWED_SCHEME}://{ALLOWED_HOST}/ pages "
+            "are hashed"
+        )
+    return url
+
+
+class _BoundedRedirectHandler(urllib.request.HTTPRedirectHandler):
+    """Follow redirects only while they stay on minimal.dev.
+
+    Left to itself urlopen follows a redirect anywhere. A tracked page that
+    started 3xx-ing to a CDN or a marketing host would still hash cleanly, and
+    the snapshot would quietly begin tracking that other document instead —
+    the failure being silent is what makes it worth blocking rather than
+    warning about.
+    """
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        check_url(newurl)
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+_OPENER = urllib.request.build_opener(_BoundedRedirectHandler)
+
+
 def hash_url(url: str) -> str:
-    request = urllib.request.Request(url, headers={"User-Agent": "minimal-skills-docs-drift"})
-    with urllib.request.urlopen(request, timeout=TIMEOUT_S) as response:
+    request = urllib.request.Request(
+        check_url(url), headers={"User-Agent": "minimal-skills-docs-drift"}
+    )
+    with _OPENER.open(request, timeout=TIMEOUT_S) as response:
+        # Belt and braces: a redirect chain the handler let through still ends
+        # somewhere, and that somewhere is what actually got read.
+        check_url(response.geturl())
         page = response.read().decode("utf-8", "replace")
     return hashlib.sha256(extract_text(page, url).encode("utf-8")).hexdigest()
 
