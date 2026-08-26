@@ -214,6 +214,20 @@
     "functional_asserts": []
   },
   {
+    "id": "net-018",
+    "prompt": "i'm in an own-ip minimal session and HTTP_PROXY=http://127.0.0.1:7654 can't reach my other session by hostname. is session-to-session routing just unavailable from own-ip?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      { "name": "response_matches", "args": { "pattern": "100\\.64\\.255\\.254" } },
+      { "name": "response_not_matches", "args": { "pattern": "(unavailable|not available|not possible|cannot|can't|unsupported)[^\\n]{0,40}own-ip" } }
+    ],
+    "functional_asserts": []
+  },
+  {
     "id": "net-017",
     "prompt": "is the 100.64.255.254 host alias a macos-only thing, or can a linux session use it too?",
     "should_trigger": true,
