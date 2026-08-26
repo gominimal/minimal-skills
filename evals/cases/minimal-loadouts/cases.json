@@ -127,7 +127,7 @@
   },
   {
     "id": "loadouts-005",
-    "prompt": "I put a lifecycle hook in my minimal loadout to start my dev server when the session activates, but nothing runs. Why?",
+    "prompt": "Does an on_activate lifecycle hook in a Minimal loadout actually run when the session activates, or is it only recorded with the session?",
     "should_trigger": true,
     "tier": "text",
     "suite": "regression",
@@ -139,7 +139,13 @@
       {
         "name": "response_matches",
         "args": {
-          "pattern": "\\brecord(s|ed|ing)?\\b|\\binert\\b|\\b(not|never|n.t)\\b[^\\n]{0,25}\\b(execut|run|ran|fire|wire)\\w*"
+          "pattern": "\\b(execut|runs?|ran|fires?)\\w*\\b"
+        }
+      },
+      {
+        "name": "response_not_matches",
+        "args": {
+          "pattern": "\\binert\\b|\\b(not|never|n.t)\\b[^\\n]{0,25}\\b(execut|run|ran|fire|wire)\\w*"
         }
       },
       "docs_urls_valid"

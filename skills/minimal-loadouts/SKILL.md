@@ -56,9 +56,14 @@ Directives that prevent the common failures:
   so opportunistic dotfile patches are safe.
 - `packages` names are not checked at activation; an unknown package fails
   later at session spawn with `no such package`.
-- `[[lifecycle_hooks]]` are composed and recorded with the session, but in
-  the current release they are NOT executed. Do not promise boot-time
-  behavior from a hook.
+- `[[lifecycle_hooks]]` DO execute. An `on_activate` hook runs at
+  activation, and activation logs each one it ran by its `description`.
+  `value` is either inline shell, `{ type = "inline", value = "..." }`, or
+  `{ type = "external", value = "./hooks/on-activate.sh" }`, whose path
+  resolves against the directory beside the loadout file. The command runs
+  inside the session, not on the host, so `$HOME` and every path in it
+  resolve in the sandbox. Hooks run after `patches` are in place, so a hook
+  may read a file the loadout patched in.
 
 ## Shell personalization: use vars, not rc files
 
