@@ -107,8 +107,10 @@ curl http://127.0.0.1:4321/    # on the host, no proxy needed
   `lsof -nP -iTCP:7654 -sTCP:LISTEN`.
 - Everything binds loopback only; there is no public URL. Bring your own
   tunnel (for example cloudflared) pointed at the routed port.
-- Error responses hold the connection open: an unknown hostname returns 502
-  without closing the socket, so raw `nc`/`socat` probes appear to hang while
-  curl and browsers are fine.
+- An unknown hostname returns a well-formed `502 Bad Gateway` carrying
+  `Content-Length: 0` and `Connection: close`, and the socket closes
+  immediately — raw `nc`/`socat` probes return rather than hang. Read a 502
+  as "the proxy is up and the session name in the URL is wrong"; it does not
+  indicate a stuck connection.
 - Never forward port 7654 itself off the machine. The proxy trusts whoever
   reaches it; tunnel a single session's port instead.

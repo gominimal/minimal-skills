@@ -127,14 +127,16 @@
   },
   {
     "id": "net-010",
-    "prompt": "probing the minimal preview proxy with socat seems to hang, but curl works fine. is it broken?",
+    "prompt": "the minimal preview proxy returns 502 Bad Gateway for my session hostname. what does that tell me, and will a raw socat probe hang on it?",
     "should_trigger": true,
     "tier": "text",
     "suite": "regression",
     "trials": null,
     "allowed_tools": ["Skill"],
     "expected_checks": [
-      { "name": "response_matches", "args": { "pattern": "502" } }
+      { "name": "response_matches", "args": { "pattern": "502" } },
+      { "name": "response_matches", "args": { "pattern": "host\\s?name|session name" } },
+      { "name": "response_not_matches", "args": { "pattern": "hold(s|ing)? the connection|without closing|appear to hang|will hang" } }
     ],
     "functional_asserts": []
   },
