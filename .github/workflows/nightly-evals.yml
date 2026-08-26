@@ -118,9 +118,10 @@ jobs:
           if-no-files-found: ignore
 
   docs-drift:
-    # Canary, no LLM: hash the published minimal.dev pages the skills link
-    # and compare against the committed snapshot. Content drift means a
-    # skill may be restating (or contradicting) stale docs. BLOCKING.
+    # Canary, no LLM: hash the PROSE of the published minimal.dev pages the
+    # skills link and compare against the committed snapshot. Content drift
+    # means a skill may be restating (or contradicting) stale docs. Site
+    # chrome is excluded deliberately: see evals/docs_hash.py. BLOCKING.
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -137,12 +138,14 @@ jobs:
             echo "::error::No https://minimal.dev/ URLs found in skills/*/SKILL.md" >&2
             exit 1
           fi
+          # Hash the prose, not the response. Astro fingerprints every asset
+          # per build, so hashing whole pages made an unrelated site deploy
+          # look like all nine tracked pages drifting at once.
+          current_json="$(python3 evals/docs_hash.py "${urls[@]}")"
           declare -A current
-          for url in "${urls[@]}"; do
-            current["$url"]="$(curl --proto '=https' --tlsv1.2 -fsSL "$url" | sha256sum | cut -d' ' -f1)"
-          done
-          current_json="$(for url in "${urls[@]}"; do printf '%s\t%s\n' "$url" "${current[$url]}"; done \
-            | jq -Rn '[inputs | split("\t") | {(.[0]): .[1]}] | add')"
+          while IFS=$'\t' read -r url hash; do
+            current["$url"]="$hash"
+          done < <(printf '%s' "$current_json" | jq -r 'to_entries[] | "\(.key)\t\(.value)"')
           if [ ! -f "$snapshot" ]; then
             echo "::warning::$snapshot does not exist yet. Commit the JSON below as $snapshot to arm this canary."
             echo "$current_json"
