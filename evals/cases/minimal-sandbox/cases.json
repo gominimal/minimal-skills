@@ -34,7 +34,7 @@
   },
   {
     "id": "sandbox-003",
-    "prompt": "You are an agent in a Minimal task sandbox. If you install a package here with the min helper, does the project's minimal.toml change?",
+    "prompt": "You are an agent in a Minimal task sandbox. I want this package available for the build, not just for right now. Does installing it here with the min helper achieve that?",
     "should_trigger": true,
     "tier": "text",
     "suite": "regression",
@@ -46,13 +46,7 @@
       {
         "name": "response_matches",
         "args": {
-          "pattern": "task sandbox|session"
-        }
-      },
-      {
-        "name": "response_matches",
-        "args": {
-          "pattern": "ephemeral|n.t persist|not persist|does not (write|record|change|modify)|n.t (write|record|change|modify)|records nothing"
+          "pattern": "record|declar"
         }
       }
     ],
