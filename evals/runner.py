@@ -328,6 +328,19 @@ def run_checks(case: dict, result: checks_mod.Result) -> tuple[dict[str, bool], 
     return outcomes, all_ok
 
 
+def assert_output_tail(stream: str | bytes | None) -> str:
+    """Last ASSERT_OUTPUT_TAIL chars of a captured stream.
+
+    subprocess.TimeoutExpired carries whatever the command emitted before the
+    kill, but hands it back as bytes even under text=True, so decode first.
+    """
+    if stream is None:
+        return ""
+    if isinstance(stream, bytes):
+        stream = stream.decode("utf-8", "replace")
+    return stream[-ASSERT_OUTPUT_TAIL:]
+
+
 def run_asserts(case: dict, workspace: Path) -> tuple[list[dict], bool]:
     """Run each functional assert, keeping enough output to debug a failure.
 
@@ -349,11 +362,13 @@ def run_asserts(case: dict, workspace: Path) -> tuple[list[dict], bool]:
             entry["returncode"] = completed.returncode
             entry["ok"] = completed.returncode == 0
             if completed.returncode != 0:
-                entry["stdout"] = completed.stdout[-ASSERT_OUTPUT_TAIL:]
-                entry["stderr"] = completed.stderr[-ASSERT_OUTPUT_TAIL:]
-        except subprocess.TimeoutExpired:
+                entry["stdout"] = assert_output_tail(completed.stdout)
+                entry["stderr"] = assert_output_tail(completed.stderr)
+        except subprocess.TimeoutExpired as exc:
             entry["ok"] = False
             entry["timed_out_after_s"] = timeout
+            entry["stdout"] = assert_output_tail(exc.stdout)
+            entry["stderr"] = assert_output_tail(exc.stderr)
         records.append(entry)
         if not entry["ok"]:
             all_ok = False
