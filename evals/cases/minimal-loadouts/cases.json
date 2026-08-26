@@ -40,12 +40,6 @@
       {
         "name": "response_matches",
         "args": {
-          "pattern": "name\\s*="
-        }
-      },
-      {
-        "name": "response_matches",
-        "args": {
           "pattern": "packages\\s*=\\s*\\["
         }
       },
@@ -59,6 +53,12 @@
         "name": "response_matches",
         "args": {
           "pattern": "loadouts/"
+        }
+      },
+      {
+        "name": "response_not_matches",
+        "args": {
+          "pattern": "^\\s*name\\s*="
         }
       },
       "docs_urls_valid"
