@@ -199,6 +199,20 @@
     "functional_asserts": []
   },
   {
+    "id": "net-019",
+    "prompt": "my minimal session was activated with --network own-ip and needs to reach another session by hostname. which proxy address do i point HTTP_PROXY at?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      { "name": "response_matches", "args": { "pattern": "100\\.64\\.255\\.254:7654" } },
+      { "name": "response_matches", "args": { "pattern": "\\.local\\.min\\.internal" } }
+    ],
+    "functional_asserts": []
+  },
+  {
     "id": "net-016",
     "prompt": "i'm on linux and my minimal session can't reach 100.64.255.254 to hit a server on my host. what's wrong?",
     "should_trigger": true,
