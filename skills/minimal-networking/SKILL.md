@@ -81,6 +81,23 @@ export HTTPS_PROXY=http://127.0.0.1:7654
 curl http://<peer>.local.min.internal:<port>/
 ```
 
+From a session with its own network namespace — every macOS session, and on
+Linux `--provider local-minvmd` or `--network own-ip` — `127.0.0.1:7654` is
+the sandbox's own loopback and nothing listens there. Point the proxy at the
+host alias instead; peer hostnames resolve through it exactly the same way:
+
+```bash
+export HTTP_PROXY=http://100.64.255.254:7654
+export HTTPS_PROXY=http://100.64.255.254:7654
+curl http://<peer>.local.min.internal:<port>/
+```
+
+The recipe applies in both cases; only the proxy address changes. Verified
+from an own-ip session against a peer session serving on port 4321: via the
+alias the peer's own server answered, while `127.0.0.1:7654` refused the
+connection. A 502 from the alias means the proxy is up and the peer hostname
+is wrong — not that the route is unavailable.
+
 Single host only. Do not claim credential or egress isolation: egress policy
 is topology only today, enforcement is not wired, and default sessions share
 one network namespace, so they can also reach each other's ports directly.
