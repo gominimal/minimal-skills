@@ -76,10 +76,15 @@ Sessions on the same host reach each other through the same proxy. Inside the
 calling session:
 
 ```bash
-export HTTP_PROXY=http://127.0.0.1:7654
-export HTTPS_PROXY=http://127.0.0.1:7654
+export http_proxy=http://127.0.0.1:7654
+export https_proxy=http://127.0.0.1:7654
 curl http://<peer>.local.min.internal:<port>/
 ```
+
+Export the lowercase names. curl deliberately ignores an uppercase
+`HTTP_PROXY` for `http://` URLs, so setting only that leaves the request
+going direct and the peer hostname fails to resolve. Per-call, `curl -x
+http://127.0.0.1:7654 http://<peer>.local.min.internal:<port>/` works too.
 
 From a session with its own network namespace — every macOS session, and on
 Linux `--provider local-minvmd` or `--network own-ip` — `127.0.0.1:7654` is
@@ -87,8 +92,8 @@ the sandbox's own loopback and nothing listens there. Point the proxy at the
 host alias instead; peer hostnames resolve through it exactly the same way:
 
 ```bash
-export HTTP_PROXY=http://100.64.255.254:7654
-export HTTPS_PROXY=http://100.64.255.254:7654
+export http_proxy=http://100.64.255.254:7654
+export https_proxy=http://100.64.255.254:7654
 curl http://<peer>.local.min.internal:<port>/
 ```
 
