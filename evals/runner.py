@@ -329,16 +329,21 @@ def run_checks(case: dict, result: checks_mod.Result) -> tuple[dict[str, bool], 
 
 
 def assert_output_tail(stream: str | bytes | None) -> str:
-    """Last ASSERT_OUTPUT_TAIL chars of a captured stream.
+    """The last ASSERT_OUTPUT_TAIL bytes of a captured stream, decoded.
 
-    subprocess.TimeoutExpired carries whatever the command emitted before the
-    kill, but hands it back as bytes even under text=True, so decode first.
+    Two shapes arrive here: subprocess.run hands back str, but
+    subprocess.TimeoutExpired carries what the command emitted before the kill
+    as bytes even under text=True. Both are measured in bytes, because a cap
+    counted in characters would let multibyte output run past the byte budget
+    the constant names. Slicing before decoding also means a runaway command's
+    output is never fully decoded just to throw most of it away; the cost is a
+    boundary that can land mid-codepoint, which errors="replace" absorbs.
     """
     if stream is None:
         return ""
-    if isinstance(stream, bytes):
-        stream = stream.decode("utf-8", "replace")
-    return stream[-ASSERT_OUTPUT_TAIL:]
+    if isinstance(stream, str):
+        stream = stream.encode("utf-8", "replace")
+    return stream[-ASSERT_OUTPUT_TAIL:].decode("utf-8", "replace")
 
 
 def run_asserts(case: dict, workspace: Path) -> tuple[list[dict], bool]:
