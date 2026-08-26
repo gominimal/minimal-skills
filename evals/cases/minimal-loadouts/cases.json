@@ -40,12 +40,6 @@
       {
         "name": "response_matches",
         "args": {
-          "pattern": "name\\s*="
-        }
-      },
-      {
-        "name": "response_matches",
-        "args": {
           "pattern": "packages\\s*=\\s*\\["
         }
       },
@@ -61,13 +55,19 @@
           "pattern": "loadouts/"
         }
       },
+      {
+        "name": "response_not_matches",
+        "args": {
+          "pattern": "^\\s*name\\s*="
+        }
+      },
       "docs_urls_valid"
     ],
     "functional_asserts": []
   },
   {
     "id": "loadouts-003",
-    "prompt": "min session activate --loadout dev fails with a NameMismatch error mentioning my loadout file. What's wrong?",
+    "prompt": "My Minimal loadout file is `helix.toml` but it declares `name = \"dev\"` inside. Which name wins, and do I need the `name` field at all?",
     "should_trigger": true,
     "tier": "text",
     "suite": "regression",
@@ -85,7 +85,13 @@
       {
         "name": "response_matches",
         "args": {
-          "pattern": "name\\s*=|`name`"
+          "pattern": "deprecat|no longer|not required|can be (deleted|removed)|ignor"
+        }
+      },
+      {
+        "name": "response_not_matches",
+        "args": {
+          "pattern": "NameMismatch"
         }
       },
       "docs_urls_valid"
@@ -127,7 +133,7 @@
   },
   {
     "id": "loadouts-005",
-    "prompt": "I put a lifecycle hook in my minimal loadout to start my dev server when the session activates, but nothing runs. Why?",
+    "prompt": "Does an on_activate lifecycle hook in a Minimal loadout actually run when the session activates, or is it only recorded with the session?",
     "should_trigger": true,
     "tier": "text",
     "suite": "regression",
@@ -139,7 +145,13 @@
       {
         "name": "response_matches",
         "args": {
-          "pattern": "\\brecord(s|ed|ing)?\\b|\\binert\\b|\\b(not|never|n.t)\\b[^\\n]{0,25}\\b(execut|run|ran|fire|wire)\\w*"
+          "pattern": "\\b(execut|runs?|ran|fires?)\\w*\\b"
+        }
+      },
+      {
+        "name": "response_not_matches",
+        "args": {
+          "pattern": "\\binert\\b|\\b(not|never|n.t)\\b[^\\n]{0,25}\\b(execut|run|ran|fire|wire)\\w*"
         }
       },
       "docs_urls_valid"

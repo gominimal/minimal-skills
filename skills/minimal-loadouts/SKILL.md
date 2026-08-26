@@ -17,8 +17,11 @@ https://minimal.dev/docs/reference/loadouts
 - One TOML file per loadout at `<config>/minimal/loadouts/<name>.toml`
   (`~/.config/minimal/loadouts/` on both Linux and macOS). The directory is
   not created automatically.
-- The filename stem MUST equal the `name` field inside the file, or loading
-  fails with a `NameMismatch` error naming both.
+- The filename IS the loadout's name. A `name` field inside the file is
+  deprecated: matching the filename warns that the field can be deleted, and
+  differing from it warns and is ignored — the filename wins either way.
+  There is no longer a `NameMismatch` failure. Do not write `name` into a new
+  loadout, and delete it from an existing one.
 - Apply with `min session activate --loadout NAME` (repeatable). Set
   `[loadouts] default_loadouts = ["NAME"]` in `<config>/minimal/config.toml`
   to apply automatically; any explicit `--loadout` overrides the defaults,
@@ -28,7 +31,7 @@ https://minimal.dev/docs/reference/loadouts
 ## Authoring
 
 ```toml
-name        = "dev"
+# file: ~/.config/minimal/loadouts/dev.toml — the filename names the loadout
 description = "helix + zellij with my dotfiles"
 packages    = ["helix", "zellij"]
 
@@ -56,9 +59,14 @@ Directives that prevent the common failures:
   so opportunistic dotfile patches are safe.
 - `packages` names are not checked at activation; an unknown package fails
   later at session spawn with `no such package`.
-- `[[lifecycle_hooks]]` are composed and recorded with the session, but in
-  the current release they are NOT executed. Do not promise boot-time
-  behavior from a hook.
+- `[[lifecycle_hooks]]` DO execute. An `on_activate` hook runs at
+  activation, and activation logs each one it ran by its `description`.
+  `value` is either inline shell, `{ type = "inline", value = "..." }`, or
+  `{ type = "external", value = "./hooks/on-activate.sh" }`, whose path
+  resolves against the directory beside the loadout file. The command runs
+  inside the session, not on the host, so `$HOME` and every path in it
+  resolve in the sandbox. Hooks run after `patches` are in place, so a hook
+  may read a file the loadout patched in.
 
 ## Shell personalization: use vars, not rc files
 
