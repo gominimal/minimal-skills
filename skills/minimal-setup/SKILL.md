@@ -40,9 +40,31 @@ from a VCS root (`.git`, `.hg`, ...). For a directory that is not a VCS root,
 pass `--sync tarball` explicitly; otherwise the upload is gated, and headless
 runs skip it with a warning.
 
+## Providers on Linux
+
+On Linux, `min` can host sessions two ways, and the choice changes how a
+session sees the network. `--provider` is a global flag, accepted on every
+subcommand.
+
+- `local-minimald` (the default) runs minimald natively on the host. Sessions
+  share the host's network namespace under the default `--network host-net`;
+  `--network own-ip` still isolates a session into its own namespace.
+- `local-minvmd` runs minimald inside the minvmd microVM, behind gvproxy —
+  the same topology macOS uses.
+
+macOS has no choice to make: minvmd is the only backend there, so `--provider`
+has no effect.
+
+Sessions belong to the provider that created them. `min ls` lists only the
+default provider's sessions, so pass the same `--provider` to `ls`, `exec`, and
+`destroy` that you passed to `activate` — otherwise the session looks like it
+vanished. For what the choice means when reaching the host or a peer session,
+use minimal-networking.
+
 ## Session lifecycle
 
-- `min ls` lists sessions (alias of `min session list`).
+- `min ls` lists sessions (alias of `min session list`); it is scoped to one
+  provider, see above.
 - `min session attach [SESSION]` re-enters a session by name or id; with no
   argument it resolves from the current directory. Exiting the shell detaches;
   the session keeps running.
