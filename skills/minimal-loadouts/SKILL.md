@@ -17,8 +17,11 @@ https://minimal.dev/docs/reference/loadouts
 - One TOML file per loadout at `<config>/minimal/loadouts/<name>.toml`
   (`~/.config/minimal/loadouts/` on both Linux and macOS). The directory is
   not created automatically.
-- The filename stem MUST equal the `name` field inside the file, or loading
-  fails with a `NameMismatch` error naming both.
+- The filename IS the loadout's name. A `name` field inside the file is
+  deprecated: matching the filename warns that the field can be deleted, and
+  differing from it warns and is ignored — the filename wins either way.
+  There is no longer a `NameMismatch` failure. Do not write `name` into a new
+  loadout, and delete it from an existing one.
 - Apply with `min session activate --loadout NAME` (repeatable). Set
   `[loadouts] default_loadouts = ["NAME"]` in `<config>/minimal/config.toml`
   to apply automatically; any explicit `--loadout` overrides the defaults,
@@ -28,7 +31,7 @@ https://minimal.dev/docs/reference/loadouts
 ## Authoring
 
 ```toml
-name        = "dev"
+# file: ~/.config/minimal/loadouts/dev.toml — the filename names the loadout
 description = "helix + zellij with my dotfiles"
 packages    = ["helix", "zellij"]
 
