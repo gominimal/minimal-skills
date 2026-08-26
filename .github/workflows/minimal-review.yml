@@ -1,0 +1,890 @@
+# GENERATED FILE — DO NOT EDIT.
+#
+# Rendered from gominimal/foundry:.github/workflows/minimal-review-impl.yml
+# by review/deploy/render-standalone.py. Edit the implementation there; this
+# copy exists only because a public repo cannot call a reusable workflow in a
+# private one. foundry's review-drift.yml fails when the two disagree.
+#
+name: minimal-review
+
+# The reviewer posts an advisory review and can do nothing else. Four
+# independent gates hold that:
+#
+#   * `permissions:` grants pull-requests: write only — `contents` stays read,
+#     so it cannot push, commit or move a branch.
+#   * policy defaults approve and request_changes to false.
+#   * post.py refuses any event but COMMENT before it calls the API.
+#   * REQUEST_CHANGES needs host-attested evidence, and
+#     validate.forged_attestation rejects a document that claims that itself.
+#
+# Runbook (how to run it, what to check on day one, how to abort):
+#   gominimal/foundry -> review/docs/phase-1a-runbook.md
+
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review, reopened]
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: "PR number to review"
+        required: true
+        type: string
+permissions:
+  contents: read
+  pull-requests: write
+
+# Debounce `synchronize` bursts: three commits in ten seconds should produce one
+# review of the final head, not three of intermediate trees.
+concurrency:
+  group: minimal-review-${{ github.event.pull_request.number || github.event.inputs.pr }}
+  cancel-in-progress: true
+
+env:
+  # The box reaches the runner host through gvproxy's alias on the minvmd/KVM
+  # backend. UNVERIFIED ON LINUX — day-one check 1 in the runbook. Set the repo
+  # variable MINIMAL_REVIEW_HOST_ALIAS to 127.0.0.1 if the runner falls back to
+  # the userns backend (no /dev/kvm), where the sandbox shares the host netns.
+  HOST_ALIAS: ${{ vars.MINIMAL_REVIEW_HOST_ALIAS || '100.64.255.254' }}
+  BROKER_PORT: "8901"
+  # Sonnet either way, but the id is vendor-shaped: bare through Anthropic,
+  # namespaced through OpenRouter. An explicit MINIMAL_REVIEW_MODEL wins.
+  REVIEW_MODEL: ${{ vars.MINIMAL_REVIEW_MODEL || (secrets.MINIMAL_REVIEW_KEY != '' && 'anthropic/claude-sonnet-5' || 'claude-sonnet-5') }}
+  # Release channel for the Minimal CLI. `nightly` is how you pick up a fix
+  # before it reaches a stable release — switch the repo variable rather than
+  # editing this file, so the change is one click and shows up in the audit log.
+  # unstable: `min task run` with claude-code in the task's packages needs
+  # bff10a70 (#1262). Move to stable once that ships stable.
+  MINIMAL_CHANNEL: ${{ vars.MINIMAL_CHANNEL || 'unstable' }}
+  # The declared task the reviewer injects and runs. Overridable because a
+  # repo may already have its own [tasks.review] — webapp does — and the
+  # injector refuses to shadow it rather than silently replacing it.
+  REVIEW_TASK: ${{ vars.MINIMAL_REVIEW_TASK || 'review' }}
+  QUIET_SECONDS: ${{ vars.MINIMAL_REVIEW_QUIET_SECONDS || '90' }}
+  # Backstop against an agent that loops.
+  AGENT_TIMEOUT_SECONDS: "1500"
+  RUN_DIR: ${{ github.workspace }}/run
+
+jobs:
+  review:
+    # Same-repo PRs only (forks get no secrets), from an org member or an
+    # installed App. The Bot clause matters: both gominimal-aw-bot and
+    # dependabot are CONTRIBUTOR, not MEMBER, and gating them out would stop
+    # reviewing every dependency bump. workflow_dispatch already requires
+    # write access.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.pull_request.head.repo.full_name == github.repository &&
+       github.event.pull_request.draft != true &&
+       (github.event.pull_request.user.type == 'Bot' ||
+        contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'),
+                 github.event.pull_request.author_association)))
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      # A fork PR must never reach a credential. The job-level `if` above
+      # already refuses one, but that `if` lives in a file the PR under review
+      # can edit, so this re-checks before anything is minted.
+      - name: Refuse fork PRs
+        env:
+          CALLER: ${{ github.repository }}
+          EVENT: ${{ github.event_name }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT" = "pull_request" ] && [ "$HEAD_REPO" != "$CALLER" ]; then
+            echo "::error::fork PR from $HEAD_REPO reached the reviewer; refusing before any credential is minted."
+            exit 1
+          fi
+          echo "caller: $CALLER ($EVENT)"
+
+      - name: Quiet window
+        id: quiet
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_HEAD: ${{ github.event.pull_request.head.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          echo "waiting ${QUIET_SECONDS}s before spending anything on ${EVENT_HEAD:0:8}"
+          sleep "$QUIET_SECONDS"
+          # A blip here must not cost the PR its review — the same rule the
+          # thread fetch follows. An unreadable head is treated as unchanged:
+          # the worst case is one redundant review, against losing one entirely.
+          current="$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" --jq .head.sha 2>/dev/null || echo "$EVENT_HEAD")"
+          if [ -n "$current" ] && [ "$current" != "$EVENT_HEAD" ]; then
+            echo "::notice::head moved to ${current:0:8} during the quiet window; standing down so the newer run reviews it"
+            echo "status=stale" >> "$GITHUB_OUTPUT"
+          fi
+
+      # One App token for both private repos this job reads: gominimal/foundry
+      # (the reviewer) and gominimal/broker (credentials). This job's
+      # GITHUB_TOKEN is scoped to this repo alone, so a plain cross-repo
+      # checkout gets "Repository not found". Minted first: the next step needs it.
+      - name: Mint a token for the private reviewer and broker repos
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3
+        with:
+          app-id: ${{ vars.AW_BOT_APP_ID }}
+          private-key: ${{ secrets.AW_BOT_PRIVATE_KEY }}
+          owner: gominimal
+          repositories: foundry,broker
+
+      # The reviewer — prompt, contract, learnings — lives in gominimal/foundry,
+      # pinned to its default branch. A PR here cannot rewrite the instructions
+      # it is reviewed by, and the reviewer upgrades in one place for every repo
+      # that installs it.
+      - name: Check out the reviewer (gominimal/foundry@main)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: gominimal/foundry
+          # Standalone: job.workflow_sha would name a commit in THIS repo, not
+          # in foundry. The default branch is the only available pin, so this
+          # copy carries the version skew the gate's forward-compat shim absorbs.
+          ref: main
+          token: ${{ steps.app-token.outputs.token }}
+          path: reviewer
+          persist-credentials: false
+
+      # workflow_dispatch skips the job-level fork guard, because there is no
+      # pull_request payload to read head.repo from. Without this it would
+      # resolve refs/pull/<n>/head for ANY number given — including a fork's —
+      # and run the agent over untrusted code in a sandbox that can reach the
+      # broker. Dispatch requires write access, but "trusted to trigger" is not
+      # "meant to review anything".
+      - name: Refuse a fork PR on dispatch
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.inputs.pr }}
+        run: |
+          set -euo pipefail
+          head_repo="$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" --jq '.head.repo.full_name // ""')"
+          if [ "$head_repo" != "$GITHUB_REPOSITORY" ]; then
+            echo "::error::PR #$PR_NUMBER has its head in '${head_repo:-<deleted>}', not $GITHUB_REPOSITORY. Fork review is out of scope."
+            exit 1
+          fi
+          echo "PR #$PR_NUMBER is same-repo"
+
+      # `ref` is load-bearing: the default checkout for a pull_request event is
+      # the MERGE commit, a tree that exists in no branch. Every finding anchor
+      # would silently point at line numbers the PR does not have.
+      - name: Check out the tree under review (PR HEAD, not the merge commit)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || format('refs/pull/{0}/head', github.event.inputs.pr) }}
+          fetch-depth: 0
+          path: pr
+          persist-credentials: false
+
+      - name: Choose which reviewer to run
+        run: |
+          set -euo pipefail
+          # foundry reviews itself with its own PR's staging code, because a
+          # module added on a branch does not exist on main yet. Keyed on the
+          # repository name so no other repo can opt in by adding review/.
+          # The GATE is chosen separately and never comes from the PR, and
+          # neither does the policy that sets its thresholds.
+          REVIEWER="$GITHUB_WORKSPACE/reviewer/review"
+          if [ "$GITHUB_REPOSITORY" = "gominimal/foundry" ] && [ -d "$GITHUB_WORKSPACE/pr/review/contract" ]; then
+            REVIEWER="$GITHUB_WORKSPACE/pr/review"
+            echo "::notice::self-review: running this PR's reviewer, not the default branch's"
+          fi
+          echo "REVIEWER=$REVIEWER" >> "$GITHUB_ENV"
+          echo "reviewer: $REVIEWER"
+
+      - name: Resolve the PR and stage the reviewer's inputs
+        id: pr
+        working-directory: pr
+        env:
+          EVENT_PR_NUMBER: ${{ github.event.pull_request.number }}
+          INPUT_PR_NUMBER: ${{ github.event.inputs.pr }}
+          EVENT_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          EVENT_BASE_REF: ${{ github.event.pull_request.base.ref }}
+          EVENT_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUN_DIR"
+
+          PR_NUMBER="${EVENT_PR_NUMBER:-${INPUT_PR_NUMBER:-}}"
+          case "$PR_NUMBER" in
+            '' | *[!0-9]*) echo "::error::not a PR number: '$PR_NUMBER'"; exit 1 ;;
+          esac
+
+          HEAD_SHA="$(git rev-parse HEAD)"
+          if [ -n "${EVENT_HEAD_SHA:-}" ] && [ "$HEAD_SHA" != "$EVENT_HEAD_SHA" ]; then
+            echo "::error::checked out $HEAD_SHA but the PR head is $EVENT_HEAD_SHA — anchors would be wrong"
+            exit 1
+          fi
+
+          BASE_REF="${EVENT_BASE_REF:-$DEFAULT_BRANCH}"
+          # The checkout runs with persist-credentials:false (the tree under
+          # review must never carry a usable token), so a bare `git fetch
+          # origin` has no credentials — that is what failed the first run.
+          # The event already carries the base sha; only workflow_dispatch has
+          # to go to the network, and it does so with an explicit token URL.
+          if [ -n "${EVENT_BASE_SHA:-}" ]; then
+            BASE_TIP="$EVENT_BASE_SHA"
+          else
+            git fetch --no-tags --quiet \
+              "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
+              "+refs/heads/${BASE_REF}:refs/remotes/origin/${BASE_REF}"
+            BASE_TIP="refs/remotes/origin/${BASE_REF}"
+          fi
+          BASE_SHA="$(git merge-base "$BASE_TIP" HEAD)"
+
+          # The policy sets the confidence floor and the inline cap — it governs
+          # the gate, so it cannot come from the branch being gated. Taken from
+          # the merge base: still this repo's own committed policy, but the
+          # version that was already reviewed and merged, so a PR cannot raise
+          # min_confidence or set max_inline_findings to 0 and silence itself.
+          # A policy change takes effect for the PRs after it, not for itself.
+          # Absent is fine — every reader falls back to the built-in defaults.
+          if git show "$BASE_SHA:.minimal/review/policy.toml" > "$RUN_DIR/policy.toml" 2>/dev/null; then
+            echo "policy: from base ${BASE_SHA:0:12}"
+          else
+            rm -f "$RUN_DIR/policy.toml"
+            echo "policy: none at base; using built-in defaults"
+          fi
+
+          if [ -e .review ]; then
+            echo "::error::the repo already has a .review path; the reviewer stages its inputs there"
+            exit 1
+          fi
+          mkdir .review
+
+          # The three-dot diff, which is what GitHub shows as "Files changed".
+          git diff --no-color --no-ext-diff "$BASE_SHA" HEAD > .review/pr.diff
+          git diff --name-only "$BASE_SHA" HEAD > "$RUN_DIR/changed-files.txt"
+
+          # PR title and body are attacker-controlled text. They reach the agent
+          # as JSON data and never pass through a shell: jq reads the event
+          # payload from disk, nothing is interpolated into this script.
+          jq -n \
+            --slurpfile ev "$GITHUB_EVENT_PATH" \
+            --argjson number "$PR_NUMBER" \
+            --arg head_sha "$HEAD_SHA" \
+            --arg base_sha "$BASE_SHA" \
+            --arg base_ref "$BASE_REF" \
+            --rawfile files "$RUN_DIR/changed-files.txt" \
+            '{
+               number: $number,
+               title: ($ev[0].pull_request.title // "(workflow_dispatch)"),
+               body: ($ev[0].pull_request.body // ""),
+               head_sha: $head_sha,
+               base_sha: $base_sha,
+               base_ref: $base_ref,
+               changed_files: ($files | split("\n") | map(select(length > 0)))
+             }' > .review/pr.json
+
+
+          # Findings already dismissed. Always from the default branch, never
+          # $REVIEWER: a PR must not choose what its own reviewer stays silent
+          # about. Absent is a valid empty state.
+          if [ -f "$GITHUB_WORKSPACE/reviewer/review/learnings/minimal.md" ]; then
+            cp "$GITHUB_WORKSPACE/reviewer/review/learnings/minimal.md" .review/learnings.md
+          else
+            printf '# Dismissed findings\n\n_None recorded yet._\n' > .review/learnings.md
+          fi
+
+          # No-build shims; the task prepends this directory to PATH.
+          mkdir -p .review/nobuild
+          for tool in cargo rustc cargo-clippy cargo-nextest; do
+            cat > ".review/nobuild/$tool" <<'STUB'
+          #!/bin/sh
+          echo "$(date -u +%H:%M:%S) $(basename "$0") $*" >> "$PWD/.review/build-attempts.log"
+          echo "minimal-review: building is out of bounds for this review (see review-prompt.md)." >&2
+          exit 127
+          STUB
+            chmod +x ".review/nobuild/$tool"
+          done
+          : > .review/build-attempts.log
+
+          cp .review/pr.diff .review/pr.json "$RUN_DIR/"
+
+          echo "pr_number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
+          echo "head_sha=$HEAD_SHA"   >> "$GITHUB_OUTPUT"
+          echo "base_sha=$BASE_SHA"   >> "$GITHUB_OUTPUT"
+          echo "PR #$PR_NUMBER  head=$HEAD_SHA  base=$BASE_SHA  $(wc -l < .review/pr.diff) diff lines"
+
+      - name: Install the review library and stage the generated schema
+        id: lib
+        env:
+          LOGFIRE_TOKEN: ${{ secrets.LOGFIRE_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          # The GATE — validate, pipeline, post — always comes from the default
+          # branch. A PR must never supply the code that decides whether its own
+          # findings are honest and whether anything may be published.
+          python3 -m venv "$RUNNER_TEMP/venv"
+          extra=""
+          [ -n "${LOGFIRE_TOKEN:-}" ] && extra="[telemetry]"
+          "$RUNNER_TEMP/venv/bin/pip" install --quiet --disable-pip-version-check \
+            "$GITHUB_WORKSPACE/reviewer/review$extra"
+
+          # STAGING — repomap, threads, prompt — shapes the agent's input and
+          # cannot publish anything, so a foundry self-review may use its own.
+          # A shell variable, not GITHUB_ENV: it is read in this same step, and
+          # GITHUB_ENV only reaches later ones.
+          STAGING_PY="$RUNNER_TEMP/venv/bin/python"
+          if [ "$REVIEWER" != "$GITHUB_WORKSPACE/reviewer/review" ]; then
+            python3 -m venv "$RUNNER_TEMP/staging"
+            "$RUNNER_TEMP/staging/bin/pip" install --quiet --disable-pip-version-check "$REVIEWER"
+            STAGING_PY="$RUNNER_TEMP/staging/bin/python"
+          fi
+          echo "staging python: $STAGING_PY"
+          # The schema handed to the agent is generated from the Pydantic models,
+          # so the contract the agent is told and the validator that judges it
+          # cannot drift.
+          # From the GATE, not staging: the schema the agent is told must be
+          # the one the validator judges by, which is the whole reason it is
+          # generated rather than written by hand. Taking it from the PR while
+          # the validator comes from main would reintroduce exactly the drift
+          # this generation step exists to prevent.
+          "$RUNNER_TEMP/venv/bin/python" -m contract.models --emit-schema \
+            > "$GITHUB_WORKSPACE/pr/.review/minimal-review.v1.schema.json"
+
+          # The prompt is a template; the policy is the source of the numbers
+          # in it. Stating "at most 3 findings" in the prompt while policy.toml
+          # holds max_inline_findings gives one rule two owners, and the
+          # prompt's copy is the one nobody remembers to change. Raise the cap
+          # and the agent keeps volunteering the old number; lower it and the
+          # agent spends its budget on findings the validator then drops.
+          "$STAGING_PY" -m contract.prompt \
+            "$REVIEWER/contract/review-prompt.md" \
+            --policy "$RUN_DIR/policy.toml" \
+            -o "$GITHUB_WORKSPACE/pr/.review/review-prompt.md"
+
+          # Keep a copy of what the agent was actually handed. The artifact
+          # collects $RUN_DIR, and the prompt is staged under pr/.review/, so
+          # "what did the agent read" was unanswerable after the fact. A run
+          # where the agent replied conversationally instead of reviewing cost a
+          # control experiment to diagnose, for want of this one file.
+          cp "$GITHUB_WORKSPACE/pr/.review/review-prompt.md" "$RUN_DIR/review-prompt.md"
+          echo "prompt: $(wc -c < "$RUN_DIR/review-prompt.md") bytes, sha256 $(sha256sum "$RUN_DIR/review-prompt.md" | cut -c1-16)"
+
+          # Repo map: what exists in this codebase and what it is for. Every
+          # workspace crate with its //! intent line, plus the public surface of
+          # the crates this PR touches. ~17% of human review comments here are
+          # "use the thing we already have" — that needs an inventory, not a
+          # reference index, and this one costs ~60 ms and needs no toolchain.
+          "$STAGING_PY" -m contract.repomap \
+            "$GITHUB_WORKSPACE/pr" \
+            --changed-files "$RUN_DIR/changed-files.txt" \
+            -o "$GITHUB_WORKSPACE/pr/.review/repomap.md" || \
+            printf '# Repo map\n\n_Unavailable for this run._\n' \
+              > "$GITHUB_WORKSPACE/pr/.review/repomap.md"
+
+          # Existing review threads, with their resolved state. Fetched here so
+          # no GitHub token ever enters the sandbox; the agent reads a file.
+          # Repeating a point a human already resolved is the top muting
+          # trigger in the team survey.
+          # Belt-and-braces, not the actual fix. The module handles its own
+          # failures (see threads.main); this guard covers the case where the
+          # module itself cannot run at all — a bad install, an import error, a
+          # version skew between the reviewer checkout and this workflow — the
+          # library is pip-installed from a checkout pinned to the default
+          # branch, so a module added on a feature branch is absent here until
+          # it merges. Thread history is context, not a
+          # precondition, and it is worth strictly less than the review it
+          # would otherwise block.
+          GITHUB_TOKEN="${{ github.token }}" "$STAGING_PY" -m contract.threads \
+            --repo "$GITHUB_REPOSITORY" --pr "${{ steps.pr.outputs.pr_number }}" \
+            -o "$GITHUB_WORKSPACE/pr/.review/threads.json" || \
+            printf '[]\n' > "$GITHUB_WORKSPACE/pr/.review/threads.json"
+
+          if [ -f "$GITHUB_WORKSPACE/pr/Cargo.toml" ]; then echo "repo_map=rust" >> "$GITHUB_OUTPUT"
+          elif [ -f "$GITHUB_WORKSPACE/pr/package.json" ]; then echo "repo_map=typescript" >> "$GITHUB_OUTPUT"
+          else echo "repo_map=absent" >> "$GITHUB_OUTPUT"; fi
+
+          cp "$GITHUB_WORKSPACE/pr/.review/repomap.md" \
+             "$GITHUB_WORKSPACE/pr/.review/threads.json" \
+             "$GITHUB_WORKSPACE/pr/.review/learnings.md" "$RUN_DIR/" 2>/dev/null || true
+
+      - name: Install Minimal
+        run: |
+          set -euo pipefail
+          curl -fsSL "https://go.minimal.dev/${MINIMAL_CHANNEL}" | sh
+          for d in "$HOME/.local/bin" "$HOME/.minimal/bin" /usr/local/bin; do
+            if [ -d "$d" ]; then echo "$d" >> "$GITHUB_PATH"; fi
+          done
+
+      # Ubuntu 24.04 restricts unprivileged user namespaces via AppArmor, and
+      # Minimal's sandbox (hakoniwa/unshare) needs them — without this the
+      # package build dies with write("/proc/self/uid_map") => Operation not
+      # permitted. Same line gominimal/minimal's own ci-linux-native.yml uses.
+      - name: Enable unprivileged user namespaces
+        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+
+      - name: Report the isolation backend
+        run: |
+          set -euo pipefail
+          command -v min >/dev/null || { echo "::error::min is not on PATH after install"; exit 1; }
+          min --version
+          if [ -e /dev/kvm ]; then
+            echo "backend: /dev/kvm present — minvmd/KVM, gvproxy host alias $HOST_ALIAS applies"
+          else
+            echo "::warning::/dev/kvm absent — userns fallback. The gvproxy alias $HOST_ALIAS may not route; see day-one check 1 in the runbook."
+          fi
+
+      # The credential broker is gominimal/broker — the org's product, not the
+      # prototype in review/broker/, which is kept only for its OpenAI shim
+      # (see review/broker/README.md). It reads CLAUDE_OAUTH_TOKEN and attaches
+      # an OAuth Bearer upstream, so no credential material reaches the sandbox:
+      # the box gets a placeholder token and a base URL pointing back here.
+      - name: Check out the credential broker (gominimal/broker)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: gominimal/broker
+          ref: e6e0c29b74a4fd93258ec028325a97fc3ab639a8
+          token: ${{ steps.app-token.outputs.token }}
+          path: broker
+          persist-credentials: false
+
+      - name: Start the credential broker and preflight it
+        env:
+          CLAUDE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # Host-side only. The sandbox never sees this — it gets a placeholder
+          # and the broker's URL, which is the whole reason the broker exists.
+          MINIMAL_REVIEW_KEY: ${{ secrets.MINIMAL_REVIEW_KEY }}
+          # A base, not an endpoint: the broker appends the client's own
+          # `/v1/messages` to it. `/api/v1` here produced `/api/v1/v1/messages`
+          # and a 404 on every call.
+          BROKER_ANTHROPIC_UPSTREAM: ${{ secrets.MINIMAL_REVIEW_KEY != '' && 'https://openrouter.ai/api' || '' }}
+          BROKER_PORT: ${{ env.BROKER_PORT }}
+        run: |
+          set -euo pipefail
+          # Either credential will do. This guard predated MINIMAL_REVIEW_KEY
+          # and still demanded a Claude subscription token, so an OpenRouter-only
+          # deployment — which is a supported configuration — could not start.
+          if [ -z "${CLAUDE_OAUTH_TOKEN:-}" ] && [ -z "${MINIMAL_REVIEW_KEY:-}" ]; then
+            echo "::error::neither secrets.MINIMAL_REVIEW_KEY nor secrets.CLAUDE_CODE_OAUTH_TOKEN is set — the broker would start keyless"
+            exit 1
+          fi
+          nohup python3 "$GITHUB_WORKSPACE/broker/broker.py" > "$RUN_DIR/broker.log" 2>&1 &
+
+          for _ in $(seq 20); do
+            curl -fsS -m 2 "http://127.0.0.1:${BROKER_PORT}/health" >/dev/null 2>&1 && break
+            sleep 0.5
+          done
+
+          health="$(curl -fsS -m 5 "http://127.0.0.1:${BROKER_PORT}/health")"
+          echo "$health" | tee "$RUN_DIR/broker-health.json"
+          # Fail fast: a keyless broker makes the agent retry in silence until
+          # its timeout.
+          if ! echo "$health" | grep -qE '"(claude_oauth_loaded|openrouter_loaded)": true'; then
+            echo "::error::broker holds no model credential — aborting before minting a session"
+            exit 1
+          fi
+
+      - name: Inject the review task (runtime only — never committed)
+        working-directory: pr
+        run: |
+          set -euo pipefail
+          if   [ -f .minimal/minimal.toml ]; then CFG=.minimal/minimal.toml
+          elif [ -f minimal.toml ];          then CFG=minimal.toml
+          else
+            echo "::error::no minimal.toml — run 'min init' in this repo and commit the result (a pinned [upstream] is required)"
+            exit 1
+          fi
+          if grep -q "^\[tasks\.${REVIEW_TASK}\]" "$CFG"; then
+            echo "::error::$CFG already declares [tasks.${REVIEW_TASK}]; refusing to shadow the repo's own task. Set the repo variable MINIMAL_REVIEW_TASK to a name it does not use."
+            exit 1
+          fi
+
+          # Strip the repo's lifecycle hooks from the copy we run under.
+          #
+          # Two reasons, and the second is the one that matters. First, they
+          # need the project allow-listed in user_policy.toml and CI has no
+          # such list, so activation just refuses — that is what stopped
+          # gominimal/webapp, whose on_activate installs deps, starts postgres
+          # and runs migrations.
+          #
+          # Second: a lifecycle hook is a script *from the branch under review*,
+          # and it runs before the reviewer does. Honouring it would execute
+          # PR-authored code in a sandbox that can reach the broker, on every
+          # PR, before anything had looked at the diff. A reviewer must not run
+          # the code it was sent to read.
+          "$RUNNER_TEMP/venv/bin/python" - "$CFG" <<'PYHOOK'
+          import re, sys, tomllib
+
+          path = sys.argv[1]
+          src = open(path).read()
+
+          # Ask the parser whether there is anything to do before editing text.
+          # The literal "[[session.lifecycle_hooks]]" can appear inside a task's
+          # own bash body, where it is a line of shell and not a table at all —
+          # stripping from there would mangle a legitimate config and then be
+          # caught below as corruption, refusing a repo for no reason.
+          try:
+              before = tomllib.loads(src)
+          except tomllib.TOMLDecodeError as exc:
+              print(f"::error::{path} is not valid TOML: {exc}")
+              sys.exit(1)
+          if not (before.get("session") or {}).get("lifecycle_hooks"):
+              print("hooks: none declared")
+              sys.exit(0)
+
+          # Tolerant of indentation: TOML permits leading whitespace before a
+          # table header, and a column-0-only pattern leaves an indented hook
+          # armed while reporting success.
+          stripped, n = re.subn(
+              r'(?ms)^[ \t]*\[\[[ \t]*session\.lifecycle_hooks[ \t]*\]\].*?(?=^[ \t]*\[|\Z)',
+              '', src)
+
+          # The regex is not enough and cannot be made enough: a hook value that
+          # is a multi-line string containing a line starting with `[` ends the
+          # match early and truncates the file. So the result is parsed, and
+          # anything short of "valid, and no hook left" stops the run. A silent
+          # miss here means PR-authored setup executes; a loud failure means a
+          # config nobody has taught this to handle, which is a person's problem
+          # and not something to guess at.
+          try:
+              doc = tomllib.loads(stripped)
+          except tomllib.TOMLDecodeError as exc:
+              print(f"::error::removing lifecycle hooks corrupted {path}: {exc}")
+              sys.exit(1)
+
+          if (doc.get("session") or {}).get("lifecycle_hooks"):
+              print("::error::a lifecycle hook survived removal — refusing to activate with "
+                    "PR-authored setup armed")
+              sys.exit(1)
+
+          open(path, "w").write(stripped)
+          print(f"hooks: removed {n} block(s), verified none remain")
+          PYHOOK
+
+          cat >> "$CFG" <<TOML
+
+          [tasks.${REVIEW_TASK}]
+          description = "minimal-review: review the PR staged under .review/"
+          inherit_cwd = true
+          # ripgrep/ast-grep are how the reviewer verifies structurally now that
+          # building is out of bounds; gitleaks/trivy are the build-free
+          # secret and Cargo.lock vulnerability checks the prompt asks for.
+          # The rust stack still puts cargo on PATH here regardless of this
+          # list — no-build is enforced by the .review/nobuild shims below.
+          packages = ["base", "coreutils", "bash", "git", "curl", "python", "ripgrep", "ast-grep", "gitleaks", "trivy", "claude-code"]
+          env_vars.HOME = "/tmp"
+          env_vars.ANTHROPIC_BASE_URL = "PLACEHOLDER-set-by-the-in-box-probe"
+          env_vars.BROKER_CANDIDATES = "${HOST_ALIAS} 127.0.0.1"
+          env_vars.BROKER_PORT_IN_BOX = "${BROKER_PORT}"
+          env_vars.ANTHROPIC_AUTH_TOKEN = "brokered-no-secret-here"
+          env_vars.ANTHROPIC_MODEL = "${REVIEW_MODEL}"
+          bash = '''
+          set -eu
+          command -v claude >/dev/null 2>&1 || { echo 'review: no claude on PATH' >&2; exit 66; }
+
+          # The stack puts cargo on PATH whatever this task's packages say, so
+          # no-build is enforced by these shims, which refuse and log attempts.
+          export PATH="\$PWD/.review/nobuild:\$PATH"
+
+          # Preflight the path the AGENT will use, not the one the host can
+          # reach. The host-side /health check passes on 127.0.0.1 whatever the
+          # sandbox can see; when the box could not reach the broker, claude
+          # retried in silence until the 1500 s ceiling and produced nothing.
+          # Which alias works depends on the backend: gvproxy NATs
+          # 100.64.255.254 to the host under minvmd, while a native/userns
+          # sandbox shares the host netns and sees it as 127.0.0.1. Try both,
+          # fail in seconds if neither answers.
+          for cand in \${BROKER_CANDIDATES}; do
+            if curl -fsS -m 3 "http://\${cand}:\${BROKER_PORT_IN_BOX}/health" > /dev/null 2>&1; then
+              export ANTHROPIC_BASE_URL="http://\${cand}:\${BROKER_PORT_IN_BOX}/anthropic"
+              echo "review: broker reachable at \${cand}" >&2
+              break
+            fi
+          done
+          case "\${ANTHROPIC_BASE_URL}" in
+            *PLACEHOLDER*) echo "review: broker unreachable from the box (tried \${BROKER_CANDIDATES})" >&2; exit 67 ;;
+          esac
+          timeout ${AGENT_TIMEOUT_SECONDS} claude -p --dangerously-skip-permissions < .review/review-prompt.md > .review/agent-log.txt 2> .review/agent-err.txt || echo 'review: agent exited non-zero' >&2
+          # An ephemeral task's filesystem does not come back, so stdout
+          # carries the findings and stderr is the only other channel out.
+          # Push the logs through it rather than expecting to read them later.
+          {
+            echo "--- agent-log (tail) ---"; tail -c 8000 .review/agent-log.txt 2>/dev/null
+            echo "--- agent-err (tail) ---"; tail -c 2000 .review/agent-err.txt 2>/dev/null
+            echo "--- build attempts ---"; tail -c 2000 .review/build-attempts.log 2>/dev/null
+          } >&2
+
+          if ! test -s .review/findings.json; then
+            # Anything upstream and transient — quota, gateway, overload —
+            # means "no review this time", not "the reviewer is broken". A red
+            # X for someone else's 502 costs more trust than the missed review.
+            if grep -qiE '\((429|500|502|503|504|529)\)|rate.?limit|too many requests|overloaded|api error|connection error' \
+                 .review/agent-log.txt .review/agent-err.txt 2>/dev/null; then
+              echo 'review: upstream unavailable; no review produced' >&2
+              tail -n 5 .review/agent-log.txt >&2
+              exit 75
+            fi
+            echo 'review: agent produced no .review/findings.json' >&2
+            # What the SANDBOX saw, so "it refused" and "it never got the
+            # inputs" stop looking identical in the log.
+            #
+            # Every expansion here is escaped. This heredoc is unquoted, so an
+            # unescaped $( ) runs on the runner at inject time and bakes the
+            # host's numbers into the task as a constant — which reports a
+            # 7386-byte prompt even when the box received nothing, i.e. it
+            # asserts exactly the fact this line exists to establish.
+            prompt_bytes=missing
+            diff_lines=missing
+            [ -f .review/review-prompt.md ] && prompt_bytes="\$(wc -c < .review/review-prompt.md)"
+            [ -f .review/pr.diff ] && diff_lines="\$(wc -l < .review/pr.diff)"
+            echo "review: inputs prompt=\${prompt_bytes} bytes, diff=\${diff_lines} lines" >&2
+            tail -n 40 .review/agent-err.txt >&2
+            exit 65
+          fi
+          cat .review/findings.json
+          '''
+          TOML
+
+          # Validate before minting anything: mip check is the only thing that
+          # knows this repo's task schema.
+          mip check
+          cp "$CFG" "$RUN_DIR/injected-minimal.toml"
+
+      - name: Run the review
+        id: agent
+        if: steps.quiet.outputs.status != 'stale'
+        working-directory: pr
+        run: |
+          set -uo pipefail
+          # `min task run` mints an ephemeral session, runs the task and tears
+          # it down. The task's stdout IS the data contract — it ends with
+          # `cat .review/findings.json` and nothing else may print there.
+          T0=$(date +%s)
+          # `|| rc=$?`, not a bare call followed by `rc=$?`. GitHub runs this
+          # with `bash -e`, and `set -uo pipefail` above does not turn that off
+          # — so a task exiting non-zero killed the script before the next line
+          # could read the code, and every exit-75 path below was unreachable.
+          # A command on the left of `||` is a condition, which -e ignores.
+          rc=0
+          min task run "$REVIEW_TASK" > "$RUN_DIR/findings.json" 2> "$RUN_DIR/task-stderr.txt" || rc=$?
+          elapsed=$(( $(date +%s) - T0 ))
+          echo "elapsed_seconds=$elapsed" >> "$GITHUB_OUTPUT"
+          echo "task exit $rc in ${elapsed}s"
+
+          # An ephemeral task's filesystem does not survive it, so its logs
+          # come out on stderr.
+          cp "$RUN_DIR/task-stderr.txt" "$RUN_DIR/agent-diagnostics.txt" 2>/dev/null || true
+
+          if [ "$rc" -eq 75 ]; then
+            echo "::warning::minimal-review got no usable response from upstream and produced no review for this commit. Re-run this job, or push again, once it recovers."
+            echo "status=upstream_unavailable" >> "$GITHUB_OUTPUT"
+            tail -n 20 "$RUN_DIR/task-stderr.txt" || true
+            exit 0
+          fi
+          if [ "$rc" -ne 0 ]; then
+            echo "::error::review task exited $rc"
+            tail -n 40 "$RUN_DIR/task-stderr.txt" || true
+            exit "$rc"
+          fi
+          echo "status=ok" >> "$GITHUB_OUTPUT"
+
+      # Model output is data. It validates against minimal-review/v1, the diff
+      # and the policy, or it is dropped with a reason — nothing here repairs a
+      # malformed document.
+      # Read after the run, not before: the broker's counters are cumulative and
+      # are all zero at start-up. This is the only place the token cost of a
+      # review exists — the sandbox never sees it.
+      - name: Meter the run
+        if: always()
+        run: |
+          set -uo pipefail
+          curl -fsS -m 5 "http://127.0.0.1:${BROKER_PORT}/health" \
+            > "$RUN_DIR/broker-usage.json" 2>/dev/null \
+            || echo '{}' > "$RUN_DIR/broker-usage.json"
+          python3 -c "
+          import json
+          try:
+              u = json.load(open('$RUN_DIR/broker-usage.json')).get('usage') or {}
+          except Exception:
+              u = {}
+          print('tokens: in=%s out=%s cache_read=%s requests=%s' % (
+              u.get('input_tokens'), u.get('output_tokens'),
+              u.get('cache_read_input_tokens'), u.get('requests')))
+          " || true
+
+      - name: Validate the findings document
+        if: steps.agent.outputs.status == 'ok'
+        env:
+          HEAD_SHA: ${{ steps.pr.outputs.head_sha }}
+          PR_NUMBER: ${{ steps.pr.outputs.pr_number }}
+        run: |
+          set -euo pipefail
+          "$RUNNER_TEMP/venv/bin/python" -m contract.validate "$RUN_DIR/findings.json" \
+            --diff "$RUN_DIR/pr.diff" \
+            --head-sha "$HEAD_SHA" \
+            --pr "$PR_NUMBER" \
+            --policy "$RUN_DIR/policy.toml" \
+            | tee "$RUN_DIR/validation.txt"
+
+      # validate -> decide -> render, through the library's one entry point.
+      - name: Compose the review
+        if: steps.agent.outputs.status == 'ok'
+        env:
+          HEAD_SHA: ${{ steps.pr.outputs.head_sha }}
+          PR_NUMBER: ${{ steps.pr.outputs.pr_number }}
+        run: |
+          set -euo pipefail
+          "$RUNNER_TEMP/venv/bin/python" <<'PY'
+          import json, os
+
+          from contract.models import ReviewDocument
+          from contract.pipeline import DocumentRejected
+          from contract.pipeline import run as compose
+          from contract.policy import load_policy
+
+          run_dir = os.environ["RUN_DIR"]
+          policy = load_policy(os.path.join(os.environ["RUN_DIR"], "policy.toml"))
+
+          with open(f"{run_dir}/findings.json", encoding="utf-8") as fh:
+              # The gate comes from the default branch while this workflow
+              # comes from the PR head, so the workflow can be newer than the
+              # library it calls. That is not a transient state to code around
+              # once — it is permanent, and every gate-API change passes
+              # through it on the way in. Ask what the installed gate accepts
+              # rather than assuming, so a PR that adds a parameter still gets
+              # reviewed by the older gate instead of dying on a TypeError.
+              import inspect
+
+              raw = json.load(fh)
+              accepted = inspect.signature(ReviewDocument.parse_v0_or_v1).parameters
+              host_known = {
+                  "pr": int(os.environ["PR_NUMBER"]),
+                  "head_sha": os.environ["HEAD_SHA"],
+              }
+              doc = ReviewDocument.parse_v0_or_v1(
+                  raw, **{k: v for k, v in host_known.items() if k in accepted}
+              )
+          with open(f"{run_dir}/pr.diff", encoding="utf-8") as fh:
+              diff = fh.read()
+
+          try:
+              # True because one generalist runs and it exited 0. This becomes a
+              # real cross-persona check when a panel lands; it is the line that
+              # would otherwise let an incomplete panel approve.
+              outcome = compose(
+                  doc, diff, os.environ["HEAD_SHA"], policy,
+                  expected_pr=int(os.environ["PR_NUMBER"]),
+                  personas_completed=True,
+              )
+          except DocumentRejected as exc:
+              raise SystemExit(f"::error::document rejected; nothing will be posted: {exc}")
+
+          with open(f"{run_dir}/payload.json", "w", encoding="utf-8") as fh:
+              json.dump(outcome.payload, fh, indent=2)
+          with open(f"{run_dir}/payload.md", "w", encoding="utf-8") as fh:
+              fh.write(outcome.payload["body"])
+
+          print(f"{outcome.verdict.value}: {outcome.reason}")
+          print(
+              f"{len(outcome.payload['comments'])} inline comment(s), "
+              f"{len(outcome.dropped_for_space)} folded into the summary, "
+              f"{len(outcome.dropped_as_invalid)} dropped as invalid"
+          )
+          PY
+
+      # The only step that talks to GitHub. Idempotent: a re-run finds its own
+      # sticky marker for this head SHA and declines to post twice.
+      - name: Post the review
+        id: post
+        if: steps.agent.outputs.status == 'ok'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ steps.pr.outputs.pr_number }}
+        run: |
+          set -euo pipefail
+          "$RUNNER_TEMP/venv/bin/python" -m contract.post "$RUN_DIR/payload.json" \
+            --repo "$GITHUB_REPOSITORY" \
+            --pr "$PR_NUMBER" \
+            --allow-event COMMENT \
+            | tee "$RUN_DIR/post.txt"
+
+      - name: Write the run log to the job summary
+        if: always()
+        env:
+          PR_NUMBER: ${{ steps.pr.outputs.pr_number }}
+          HEAD_SHA: ${{ steps.pr.outputs.head_sha }}
+          BASE_SHA: ${{ steps.pr.outputs.base_sha }}
+          ELAPSED: ${{ steps.agent.outputs.elapsed_seconds }}
+          AGENT_STATUS: ${{ steps.agent.outputs.status }}
+          POST_OUTCOME: ${{ steps.post.outcome }}
+          UPSTREAM: ${{ secrets.MINIMAL_REVIEW_KEY != '' && 'openrouter' || 'anthropic' }}
+          REPO_MAP: ${{ steps.lib.outputs.repo_map }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUN_DIR"
+
+          jq -n \
+            --arg pr "${PR_NUMBER:-}" --arg head "${HEAD_SHA:-}" --arg base "${BASE_SHA:-}" \
+            --arg elapsed "${ELAPSED:-}" --arg alias "$HOST_ALIAS" \
+            --arg kvm "$([ -e /dev/kvm ] && echo minvmd-kvm || echo userns-fallback)" \
+            --arg run "$GITHUB_RUN_ID" \
+            --arg astatus "${AGENT_STATUS:-none}" \
+            --arg posted "${POST_OUTCOME:-skipped}" \
+            --arg upstream "${UPSTREAM:-anthropic}" \
+            --arg repomap "${REPO_MAP:-absent}" \
+            '{pr: $pr, head_sha: $head, base_sha: $base, agent_seconds: $elapsed,
+              host_alias: $alias, backend: $kvm, run_id: $run,
+              agent_status: $astatus, posted: $posted,
+              upstream: $upstream, repo_map: $repomap}' \
+            > "$RUN_DIR/run.json"
+
+          # The audit record must say what actually happened.
+          case "${POST_OUTCOME:-skipped}" in
+            success) headline="review posted to PR #${PR_NUMBER:-?}"; detail="The review below was posted." ;;
+            failure) headline="posting FAILED for PR #${PR_NUMBER:-?}"; detail="The review below was rendered but not posted — see the failing step." ;;
+            *)       case "${AGENT_STATUS:-none}" in
+                       upstream_unavailable) headline="upstream unavailable — no review for PR #${PR_NUMBER:-?}"; detail="Upstream returned nothing usable — quota, gateway or overload. No review was produced and nothing was posted." ;;
+                       *)            headline="no review posted to PR #${PR_NUMBER:-?}"; detail="Nothing was posted." ;;
+                     esac ;;
+          esac
+
+          {
+            echo "## minimal-review — $headline"
+            echo
+            echo "$detail Head \`${HEAD_SHA:-?}\`, agent ${ELAPSED:-?}s, backend $(jq -r .backend "$RUN_DIR/run.json")."
+            echo
+            if [ -s "$RUN_DIR/payload.md" ]; then
+              echo "<details><summary>The review</summary>"
+              echo
+              cat "$RUN_DIR/payload.md"
+              echo
+              echo "</details>"
+            else
+              echo "No rendered payload — see the failing step above and the run artifact."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # Always: a review that died still has a cost, a duration and a reason,
+      # and those are the rows that turn "it broke twice this week" into a
+      # distribution. Exits 0 whatever happens — instrumentation must not be
+      # able to fail a run that has otherwise finished.
+      - name: Emit telemetry
+        if: always()
+        env:
+          LOGFIRE_TOKEN: ${{ secrets.LOGFIRE_TOKEN }}
+        run: |
+          set -uo pipefail
+          "$RUNNER_TEMP/venv/bin/python" -m contract.emit \
+            --run        "$RUN_DIR/run.json" \
+            --findings   "$RUN_DIR/findings.json" \
+            --validation "$RUN_DIR/validation.txt" \
+            --usage      "$RUN_DIR/broker-usage.json" \
+            --repo       "$GITHUB_REPOSITORY" \
+            --outcome    "${{ job.status }}" || true
+
+      - name: Upload the run artifact
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: minimal-review-pr${{ steps.pr.outputs.pr_number }}-${{ steps.pr.outputs.head_sha }}
+          path: ${{ github.workspace }}/run
+          if-no-files-found: warn
+          retention-days: 14
+          overwrite: true
+
