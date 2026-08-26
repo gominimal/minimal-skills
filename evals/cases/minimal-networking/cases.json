@@ -236,8 +236,9 @@
     "trials": null,
     "allowed_tools": ["Skill"],
     "expected_checks": [
-      { "name": "response_matches", "args": { "pattern": "100\\.64\\.255\\.254" } },
-      { "name": "response_not_matches", "args": { "pattern": "(unavailable|not available|not possible|cannot|can't|unsupported)[^\\n]{0,40}own-ip" } }
+      { "name": "response_matches", "args": { "pattern": "100\\.64\\.255\\.254:7654" } },
+      { "name": "response_not_matches", "args": { "pattern": "(session-to-session|peer|hostname)[^\\n]{0,40}(unavailable|not available|not possible|not supported|unsupported|does not work|doesn't work)[^\\n]{0,40}own-ip" } },
+      { "name": "response_not_matches", "args": { "pattern": "own-ip[^\\n]{0,60}(session-to-session|peer|hostname)[^\\n]{0,40}(unavailable|not available|not possible|not supported|unsupported|does not work|doesn't work)" } }
     ],
     "functional_asserts": []
   },

@@ -51,9 +51,10 @@ Directives that prevent the common failures:
   the host env; dropped with a warning when unset), or
   `{ inherit = true, default = "..." }`. `inherit = false` is rejected;
   omit the variable instead. Non-POSIX-shaped names need `[[vars_lenient]]`.
-- An unset `inherit` behaves differently here than in a project's
-  `[session.vars]`, which carries the same syntax. A loadout drops it and
-  activates (`WARN ... loadout inherits X but it isn't set in the host env;
+- When the host variable named by `{ inherit = true }` is unset, a loadout
+  and a project's `[session.vars]` diverge, despite carrying the same
+  syntax. (`inherit` itself is always `true` here; it is the host variable
+  it points at that is missing.) A loadout drops it and activates (`WARN ... loadout inherits X but it isn't set in the host env;
   dropping`); `[session.vars]` fails activation outright (`error: Composition
   gating failed: could not resolve pending var X`). Do not carry an
   expectation from one to the other.
