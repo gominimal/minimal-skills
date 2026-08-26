@@ -83,6 +83,27 @@ https://minimal.dev/docs/reference/sandbox-operations
   non-interactive context. It fails with an actionable error (including a
   ready-to-paste policy snippet) instead of hanging on a prompt. It is implied
   when stdin is not a TTY, but pass it explicitly so intent is visible.
+- Inherited vars need approval, so allow-list them BEFORE the first headless
+  run rather than after it. Every `{ inherit = true }` name is gated by
+  `<config>/minimal/user_policy.toml`; `--no-prompt` prints a ready-to-paste
+  snippet naming what is missing, but only once it has already failed:
+
+  ```toml
+  [vars]
+  allow = ["MY_TOKEN", "CI_*"]   # exact names or globs
+  ```
+- `min session exec` output is not safe to parse as-is, and this bites
+  scripts specifically:
+  - The first stdout line arrives EMPTY. The content is lost and the line is
+    not, so skipping line one still reads a wrong value; there is no offset
+    that recovers it. Read what you need from line two onward, or have the
+    command write to a file in the workspace and read that.
+  - It space-joins its argv and re-evaluates the result, destroying quoting.
+    A command carrying quoted arguments or shell operators does not survive
+    intact — put it in a script file in the workspace and exec that instead.
+  - It waits for its stdout pipe to close, so a backgrounded grandchild that
+    inherited it holds the call open until that process exits. Redirect the
+    child (`>/dev/null 2>&1 &`) to detach.
 - Read session state with `min session list --json` (or `--raw` for bare ids
   one per line). Never parse the human-readable table.
 - `min session attach` opens an interactive shell and takes no command
