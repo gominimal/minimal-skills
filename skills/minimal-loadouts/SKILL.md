@@ -48,9 +48,15 @@ PAGER  = { inherit = true, default = "less" }
 Directives that prevent the common failures:
 
 - `[vars]` values take three forms: a literal, `{ inherit = true }` (from
-  the host env; silently dropped with a warning when unset), or
+  the host env; dropped with a warning when unset), or
   `{ inherit = true, default = "..." }`. `inherit = false` is rejected;
   omit the variable instead. Non-POSIX-shaped names need `[[vars_lenient]]`.
+- An unset `inherit` behaves differently here than in a project's
+  `[session.vars]`, which carries the same syntax. A loadout drops it and
+  activates (`WARN ... loadout inherits X but it isn't set in the host env;
+  dropping`); `[session.vars]` fails activation outright (`error: Composition
+  gating failed: could not resolve pending var X`). Do not carry an
+  expectation from one to the other.
 - `patches` sources anchor to the host: `~` expands to the host home, the
   expanded path must be absolute, globs need a literal directory prefix
   (`~/dotfiles/**/*.lua` works, bare `**/*.lua` is rejected), and `..` is
