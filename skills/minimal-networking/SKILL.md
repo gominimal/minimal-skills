@@ -7,10 +7,18 @@ description: Experimental and subject to change. Use when previewing a dev serve
 
 Treat everything here as experimental and subject to change. This surface has
 no public docs on purpose: hostnames, ports, and flags were verified on
-2026-07-31 but are not a stable contract. For general `min` CLI context see
+2026-07-31, and the provider, host-alias, and network-mode claims were
+re-verified on 2026-08-26 against min 0.5.4-dev.23.g5e4c5ae1 (Linux aarch64),
+but none of it is a stable contract. For general `min` CLI context see
 https://minimal.dev/docs/reference/cli-min (the only relevant public page).
 Do not cite or invent any other minimal.dev URL for networking topics; none
 exists.
+
+On Linux the provider decides the topology: `--provider local-minimald` (the
+default) puts the session in the host's network namespace, `--provider
+local-minvmd` puts it in the minvmd microVM behind gvproxy. macOS has only
+minvmd. Every address claim below depends on which one is in play; see
+minimal-setup for the flag itself.
 
 ## Preview a dev server running in a session
 
@@ -77,12 +85,30 @@ one network namespace, so they can also reach each other's ports directly.
 
 ## Reach the host from inside a session
 
-Inside a session, `127.0.0.1` is the sandbox's own loopback, not the host's.
-To reach a service listening on the host's loopback, use the host alias IP:
+Which address reaches the host depends on whether the session has its own
+network namespace. Check the provider and network mode before picking one.
+
+**A session with its own namespace** — every macOS session, and on Linux
+`--provider local-minvmd` or `--network own-ip`. Here `127.0.0.1` is the
+sandbox's own loopback, and the host's loopback is behind the gvproxy alias:
 
 ```bash
 curl http://100.64.255.254:8787/
 ```
+
+**A Linux `host-net` session on the default `local-minimald` provider** shares
+the host's network namespace outright. `127.0.0.1` *is* the host's loopback,
+and the alias does not resolve at all:
+
+```bash
+curl http://127.0.0.1:8787/
+```
+
+The alias is a property of the namespace, not of the operating system. Verified
+by binding one host listener to `127.0.0.1:8080` only: it answered on
+`127.0.0.1:8080` from a default Linux session, and on `100.64.255.254:8080`
+from both a `local-minvmd` and an `own-ip` session, where `127.0.0.1:8080` was
+unreachable.
 
 ## own-ip mode and --ingress
 
@@ -99,6 +125,12 @@ curl http://127.0.0.1:4321/    # on the host, no proxy needed
 | `--network <no-net\|host-net\|own-ip>` | Network mode. `host-net` is the default (shared namespace, shared loopback, possible port collisions, direct peer reach). `no-net` is zero networking. `own-ip` gives the session its own namespace and IP. |
 | `--ingress EXT:INT[/PROTO]` | Publish session port `INT` as `127.0.0.1:EXT` on the host. Repeatable. `PROTO` is `tcp` (default) or `udp`. Requires `--network own-ip`. |
 | `min session policy <session>` | Print the session's effective network policy as JSON. Works for any session. |
+
+`--network` and `--ingress` are not listed in `min session activate --help` on
+0.5.4-dev.23 — they are hidden, not removed. Both are still accepted and
+effective: `--ingress 4321:4321` produces a real `127.0.0.1:4321` listener on
+the host and a matching `port_mappings` entry in `min session policy`. Do not
+conclude from help output that they are gone.
 
 ## Sharp edges
 

@@ -307,5 +307,19 @@
     ],
     "expected_checks": [],
     "functional_asserts": []
+  },
+  {
+    "id": "setup-018",
+    "prompt": "i activated a session with --provider local-minvmd but min ls doesn't show it. where did it go?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      { "name": "response_matches", "args": { "pattern": "--provider" } },
+      { "name": "response_matches", "args": { "pattern": "local-minvmd" } }
+    ],
+    "functional_asserts": []
   }
 ]

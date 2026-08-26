@@ -196,5 +196,34 @@
     "allowed_tools": ["Skill"],
     "expected_checks": [],
     "functional_asserts": []
+  },
+  {
+    "id": "net-016",
+    "prompt": "i'm on linux and my minimal session can't reach 100.64.255.254 to hit a server on my host. what's wrong?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      { "name": "response_matches", "args": { "pattern": "local-minimald|default provider|host-net" } },
+      { "name": "response_matches", "args": { "pattern": "127\\.0\\.0\\.1" } },
+      { "name": "response_matches", "args": { "pattern": "namespace" } }
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "net-017",
+    "prompt": "is the 100.64.255.254 host alias a macos-only thing, or can a linux session use it too?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      { "name": "response_matches", "args": { "pattern": "local-minvmd" } },
+      { "name": "response_not_matches", "args": { "pattern": "macos[- ]only|only on macos|not available on linux|no equivalent on linux" } }
+    ],
+    "functional_asserts": []
   }
 ]
