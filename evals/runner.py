@@ -32,6 +32,10 @@ DEFAULT_ALLOWED_TOOLS = {
 }
 TRIAL_TIMEOUT_S = {"text": 300, "functional": 900}
 ASSERT_TIMEOUT_S = 30
+# Bytes of assert stdout/stderr kept per command. A live-behaviour assert that
+# fails is useless without its output, but a runaway command must not bloat the
+# report either.
+ASSERT_OUTPUT_TAIL = 2000
 # Execution/mutation tools hard-denied in text tier (see run_trial).
 EXEC_TOOLS = [
     "Bash", "Write", "Edit", "NotebookEdit", "WebFetch", "WebSearch",
@@ -324,18 +328,56 @@ def run_checks(case: dict, result: checks_mod.Result) -> tuple[dict[str, bool], 
     return outcomes, all_ok
 
 
-def run_asserts(case: dict, workspace: Path) -> bool:
+def assert_output_tail(stream: str | bytes | None) -> str:
+    """The last ASSERT_OUTPUT_TAIL bytes of a captured stream, decoded.
+
+    Two shapes arrive here: subprocess.run hands back str, but
+    subprocess.TimeoutExpired carries what the command emitted before the kill
+    as bytes even under text=True. Both are measured in bytes, because a cap
+    counted in characters would let multibyte output run past the byte budget
+    the constant names. Slicing before decoding also means a runaway command's
+    output is never fully decoded just to throw most of it away; the cost is a
+    boundary that can land mid-codepoint, which errors="replace" absorbs.
+    """
+    if stream is None:
+        return ""
+    if isinstance(stream, str):
+        stream = stream.encode("utf-8", "replace")
+    return stream[-ASSERT_OUTPUT_TAIL:].decode("utf-8", "replace")
+
+
+def run_asserts(case: dict, workspace: Path) -> tuple[list[dict], bool]:
+    """Run each functional assert, keeping enough output to debug a failure.
+
+    Returns (records, all_ok). Previously this returned a bare bool and threw
+    the output away, so a nightly behaviour regression reported `asserts_ok:
+    false` and nothing else — you had to reproduce it by hand to learn what the
+    command actually printed. Records are truncated, not unbounded.
+    """
+    timeout = case.get("assert_timeout_s") or ASSERT_TIMEOUT_S
+    records: list[dict] = []
+    all_ok = True
     for command in case.get("functional_asserts") or []:
+        entry: dict = {"command": command}
         try:
             completed = subprocess.run(
                 command, shell=True, cwd=workspace,
-                capture_output=True, text=True, timeout=ASSERT_TIMEOUT_S,
+                capture_output=True, text=True, timeout=timeout,
             )
+            entry["returncode"] = completed.returncode
+            entry["ok"] = completed.returncode == 0
             if completed.returncode != 0:
-                return False
-        except subprocess.TimeoutExpired:
-            return False
-    return True
+                entry["stdout"] = assert_output_tail(completed.stdout)
+                entry["stderr"] = assert_output_tail(completed.stderr)
+        except subprocess.TimeoutExpired as exc:
+            entry["ok"] = False
+            entry["timed_out_after_s"] = timeout
+            entry["stdout"] = assert_output_tail(exc.stdout)
+            entry["stderr"] = assert_output_tail(exc.stderr)
+        records.append(entry)
+        if not entry["ok"]:
+            all_ok = False
+    return records, all_ok
 
 
 def run_trial(
@@ -349,6 +391,7 @@ def run_trial(
         "triggered_skills": [],
         "trigger_ok": False,
         "checks": {},
+        "asserts": [],
         "asserts_ok": False,
         "passed": False,
         "duration_s": 0.0,
@@ -432,7 +475,7 @@ def run_trial(
             response_text=response_text, events=events, workspace=workspace
         )
         record["checks"], checks_ok = run_checks(case, result)
-        record["asserts_ok"] = run_asserts(case, workspace)
+        record["asserts"], record["asserts_ok"] = run_asserts(case, workspace)
         record["passed"] = record["trigger_ok"] and checks_ok and record["asserts_ok"]
 
         if args.judge:
@@ -518,6 +561,24 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     selected = discover_cases(args)
+
+    # Functional cases drive a real `min`. Without one they do not fail
+    # meaningfully, they fail as a missing binary and read as a skill
+    # regression. Say so up front instead.
+    if shutil.which("min") is None:
+        functional = [
+            f"{skill}:{case.get('id')}"
+            for skill, case in selected
+            if case.get("tier") == "functional"
+        ]
+        if functional:
+            print(
+                "error: `min` not found on PATH, but these functional cases "
+                "need a real install: " + ", ".join(functional) +
+                "\n       install Minimal, or pass --tier text to skip them",
+                file=sys.stderr,
+            )
+            return 2
     known = known_skill_names()
     if not selected:
         print("no cases matched the given filters", file=sys.stderr)

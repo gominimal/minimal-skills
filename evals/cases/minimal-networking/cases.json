@@ -31,14 +31,14 @@
   },
   {
     "id": "net-003",
-    "prompt": "my two minimal sessions need to talk to each other",
+    "prompt": "my two default minimal sessions on the same linux host need to talk to each other. neither uses own-ip.",
     "should_trigger": true,
     "tier": "text",
     "suite": "regression",
     "trials": null,
     "allowed_tools": ["Skill"],
     "expected_checks": [
-      "correct_proxy_port",
+      { "name": "correct_proxy_port", "args": { "host": "loopback" } },
       { "name": "response_matches", "args": { "pattern": "HTTP_PROXY=http://127\\.0\\.0\\.1:7654" } },
       { "name": "response_matches", "args": { "pattern": "\\.local\\.min\\.internal" } }
     ],
@@ -211,6 +211,26 @@
       { "name": "response_matches", "args": { "pattern": "\\.local\\.min\\.internal" } }
     ],
     "functional_asserts": []
+  },
+  {
+    "id": "net-020",
+    "prompt": "i asked the minimal proxy for a session hostname that does not exist and got a 502. is my connection stuck?",
+    "should_trigger": true,
+    "tier": "functional",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "assert_timeout_s": 120,
+    "expected_checks": [
+      { "name": "response_matches", "args": { "pattern": "502" } },
+      { "name": "response_matches", "args": { "pattern": "clos(e|es|ed|ing)" } },
+      { "name": "response_not_matches", "args": { "pattern": "without closing the socket|holds the connection open" } }
+    ],
+    "functional_asserts": [
+      "min ls >/dev/null 2>&1 || true; curl -sS -o /dev/null -D- -m 20 -x http://127.0.0.1:7654 http://nonexistent-eval-probe.local.min.internal:1/ | tee /tmp/eval-502-headers | grep -qiE '^HTTP/1\\.[01] 502'",
+      "grep -qiE '^Connection:[[:space:]]*close' /tmp/eval-502-headers",
+      "curl -sS -o /dev/null -m 15 -x http://127.0.0.1:7654 http://nonexistent-eval-probe.local.min.internal:1/"
+    ]
   },
   {
     "id": "net-016",

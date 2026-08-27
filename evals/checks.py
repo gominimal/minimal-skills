@@ -247,6 +247,20 @@ def no_host_only_commands(args: dict, result: Result) -> bool:
 
 
 def correct_proxy_port(args: dict, result: Result) -> bool:
+    """Assert the proxy port, and optionally the host it belongs on.
+
+    Bare, this matches the port token alone, which cannot tell
+    127.0.0.1:7654 from 100.64.255.254:7654 — and those are not
+    interchangeable: the loopback form works from a session sharing the host's
+    namespace, the alias form from one with its own. Pass host="loopback" or
+    host="alias" where the topology in the prompt makes one of them the
+    correct answer.
+    """
+    host = args.get("host")
+    if host == "loopback":
+        return re.search(r"\b127\.0\.0\.1:7654\b", result.response_text, FLAGS) is not None
+    if host == "alias":
+        return re.search(r"\b100\.64\.255\.254:7654\b", result.response_text, FLAGS) is not None
     return re.search(r"\b7654\b", result.response_text, FLAGS) is not None
 
 
