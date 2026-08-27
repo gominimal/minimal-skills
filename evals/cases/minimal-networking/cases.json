@@ -237,8 +237,8 @@
     "allowed_tools": ["Skill"],
     "expected_checks": [
       { "name": "response_matches", "args": { "pattern": "100\\.64\\.255\\.254:7654" } },
-      { "name": "response_not_matches", "args": { "pattern": "(?:session-to-session|peer|hostname)[^\\n.,;:—–-]{0,28}(?:unavailable|not available|not possible|not supported|unsupported|does not work|doesn't work|impossible)[^\\n.,;:—–-]{0,28}own-ip" } },
-      { "name": "response_not_matches", "args": { "pattern": "own-ip[^\\n.;:]{0,40}(?:session-to-session|peer|hostname)[^\\n.,;:—–-]{0,28}(?:unavailable|not available|not possible|not supported|unsupported|does not work|doesn't work|impossible)" } },
+      { "name": "response_not_matches", "args": { "pattern": "(?:session-to-session|peer|hostname)[^\\n.,;:—–-]{0,28}(?:unavailable|not available|not possible|not supported|unsupported|does not work|doesn't work|impossible|cannot|can't|can not|won't|will not|isn't possible|is not possible|no longer works)[^\\n.,;:—–-]{0,28}own-ip" } },
+      { "name": "response_not_matches", "args": { "pattern": "own-ip[^\\n.;:]{0,40}(?:session-to-session|peer|hostname)[^\\n.,;:—–-]{0,28}(?:unavailable|not available|not possible|not supported|unsupported|does not work|doesn't work|impossible|cannot|can't|can not|won't|will not|isn't possible|is not possible|no longer works)" } },
       { "name": "response_not_matches", "args": { "pattern": "(?:no|cannot|can't|can not)[^\\n.,;:—–-]{0,28}(?:session-to-session|peer|hostname)[^\\n.,;:—–-]{0,28}(?:routing|traffic)" } }
     ],
     "functional_asserts": []
