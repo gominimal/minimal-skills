@@ -199,6 +199,20 @@
     "functional_asserts": []
   },
   {
+    "id": "net-019",
+    "prompt": "my minimal session was activated with --network own-ip and needs to reach another session by hostname. which proxy address do i point HTTP_PROXY at?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      { "name": "response_matches", "args": { "pattern": "100\\.64\\.255\\.254:7654" } },
+      { "name": "response_matches", "args": { "pattern": "\\.local\\.min\\.internal" } }
+    ],
+    "functional_asserts": []
+  },
+  {
     "id": "net-020",
     "prompt": "i asked the minimal proxy for a session hostname that does not exist and got a 502. is my connection stuck?",
     "should_trigger": true,
@@ -230,6 +244,22 @@
       { "name": "response_matches", "args": { "pattern": "local-minimald|default provider|host-net" } },
       { "name": "response_matches", "args": { "pattern": "127\\.0\\.0\\.1" } },
       { "name": "response_matches", "args": { "pattern": "namespace" } }
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "net-018",
+    "prompt": "i'm in an own-ip minimal session and HTTP_PROXY=http://127.0.0.1:7654 can't reach my other session by hostname. is session-to-session routing just unavailable from own-ip?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      { "name": "response_matches", "args": { "pattern": "100\\.64\\.255\\.254:7654" } },
+      { "name": "response_not_matches", "args": { "pattern": "(?:session-to-session|peer|hostname)[^\\n.,;:—–-]{0,28}(?:unavailable|not available|not possible|not supported|unsupported|does not work|doesn't work|impossible|cannot|can't|can not|won't|will not|isn't possible|is not possible|no longer works)[^\\n.,;:—–-]{0,28}own-ip" } },
+      { "name": "response_not_matches", "args": { "pattern": "own-ip[^\\n.;:]{0,40}(?:session-to-session|peer|hostname)[^\\n.,;:—–-]{0,28}(?:unavailable|not available|not possible|not supported|unsupported|does not work|doesn't work|impossible|cannot|can't|can not|won't|will not|isn't possible|is not possible|no longer works)" } },
+      { "name": "response_not_matches", "args": { "pattern": "(?:no|cannot|can't|can not)[^\\n.,;:—–-]{0,28}(?:session-to-session|peer|hostname)[^\\n.,;:—–-]{0,28}(?:routing|traffic)" } }
     ],
     "functional_asserts": []
   },
