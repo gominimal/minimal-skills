@@ -14,9 +14,62 @@ permissions:
   issues: write
 
 jobs:
+  text:
+    # The text tier, once. These cases grade what the model says against the
+    # skills; none of them invokes `min`, so running them per channel bought
+    # no signal and doubled the exposure to a marginal case going red — which
+    # is what it did (2026-08-23 through 08-27: config-003, config-004,
+    # config-007, loadouts-004/007/012 drifting in and out between runs,
+    # failing in one channel leg while passing in the other on the same
+    # commit). BLOCKING - feeds notify.
+    #
+    # No Minimal install: the runner only demands `min` when functional cases
+    # are selected, so this lane starts a job sooner and cannot be broken by
+    # an installer outage.
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install claude CLI
+        run: npm install -g @anthropic-ai/claude-code
+      - name: Run evals (text tier, 3 trials)
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+        run: |
+          mkdir -p evals/reports
+          uv run --project evals evals/runner.py --tier text --trials 3 \
+            --skip-permissions \
+            --report evals/reports/text.json \
+            --summary summary.md
+      - name: Publish summary
+        if: always()
+        run: |
+          if [ -f summary.md ]; then cat summary.md >> "$GITHUB_STEP_SUMMARY"; fi
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: text-report
+          path: evals/reports/text.json
+          if-no-files-found: ignore
+
   functional:
-    # Full suite (text + functional tiers), 3 trials, against a real `min`
-    # from each release channel. BLOCKING - feeds notify.
+    # The functional tier against a real `min` from each release channel —
+    # the only cases whose result can depend on which binary is installed.
+    # BLOCKING - feeds notify.
+    #
+    # `needs: text` is for the token, not for ordering logic: every eval job
+    # spends the same CLAUDE_CODE_OAUTH_TOKEN, and this keeps the lanes
+    # end-to-end rather than adding a third concurrent spender to the pair
+    # that already exhausted it.
+    needs: text
+    if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 120
     strategy:
@@ -48,12 +101,12 @@ jobs:
         run: |
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
           "$HOME/.local/bin/min" --version
-      - name: Run evals (all tiers, 3 trials)
+      - name: Run evals (functional tier, 3 trials)
         env:
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
         run: |
           mkdir -p evals/reports
-          uv run --project evals evals/runner.py --tier all --trials 3 \
+          uv run --project evals evals/runner.py --tier functional --trials 3 \
             --skip-permissions \
             --report evals/reports/functional-${{ matrix.channel }}.json \
             --summary summary.md
@@ -172,7 +225,7 @@ jobs:
   notify:
     # Open or update a single tracking issue when a blocking nightly job
     # fails. obsolescence is continue-on-error, so it never lands here.
-    needs: [functional, obsolescence, docs-drift]
+    needs: [text, functional, obsolescence, docs-drift]
     if: failure()
     runs-on: ubuntu-latest
     timeout-minutes: 5
