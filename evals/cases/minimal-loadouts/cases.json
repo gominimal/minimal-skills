@@ -322,15 +322,17 @@
   },
   {
     "id": "loadouts-014",
-    "prompt": "My loadout has [[lifecycle_hooks]] with on_activate = \"echo hello\" and activation fails with 'invalid type: string, expected struct HookScriptRepr'. After I fix that, a headless activate refuses to run the hook at all. What do I need?",
+    "prompt": "Two hook problems in one repo. My loadout's [[lifecycle_hooks]] uses on_activate = \"echo hello\" and activation dies with 'invalid type: string, expected struct HookScriptRepr'. Separately, a headless activate of the project says a hook needs approval. What do I fix, and whose hook needs the approval?",
     "should_trigger": true,
     "tier": "text",
     "suite": "regression",
     "trials": null,
     "allowed_tools": ["Skill"],
     "expected_checks": [
-      { "name": "response_matches", "args": { "pattern": "type\\s*=\\s*[\"']inline[\"']|type\\s*=\\s*[\"']external[\"']" } },
-      { "name": "response_matches", "args": { "pattern": "user_policy\\.toml|\\[hooks\\]" } }
+      { "name": "response_matches", "args": { "pattern": "type\\s*=\\s*[\"']?(inline|external)" } },
+      { "name": "response_matches", "args": { "pattern": "allow\\s*=\\s*\\[" } },
+      { "name": "response_matches", "args": { "pattern": "project[^.\\n]{0,40}(root|path|director|declar)" } },
+      { "name": "response_matches", "args": { "pattern": "user_policy\\.toml" } }
     ],
     "functional_asserts": []
   }

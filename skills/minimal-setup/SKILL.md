@@ -108,10 +108,11 @@ https://minimal.dev/docs/reference/sandbox-operations
   [vars]
   allow = ["MY_TOKEN", "CI_*"]   # exact names or globs
   ```
-- Lifecycle hooks are gated by the same file, keyed on PROJECT path rather
-  than on the hook: both a project's and an applied loadout's hooks need that
-  directory allow-listed under `[hooks]`, or `--no-prompt` fails with the
-  stanza to paste. `--no-hooks` skips every hook for one activation.
+- A project that declares lifecycle hooks is arbitrated by the same file's
+  `[hooks]` section, keyed on the project root: undecided means a prompt, so
+  `--no-prompt` fails with the stanza to paste. Hooks from the user's own
+  loadouts are not arbitrated and need no entry. `--no-hooks` skips every
+  hook for one activation.
 
   ```toml
   [hooks]

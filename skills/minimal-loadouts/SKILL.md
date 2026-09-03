@@ -69,20 +69,23 @@ Directives that prevent the common failures:
 - `[[lifecycle_hooks]]` DO execute. Each script is a table
   (`{ type = "inline", value = "..." }` or `{ type = "external", value =
   "./hooks/on-activate.sh" }`), never a bare string; an external path
-  resolves against the directory beside the loadout file. A project declares
-  the same block one level down, as `[[session.lifecycle_hooks]]`, so a
-  top-level copy pasted into a `minimal.toml` is reported as an unknown
-  field rather than run.
-- Hooks need permission before they run, granted by PROJECT path rather than
-  by loadout: the directory being activated must be allow-listed under
-  `[hooks]` in `<config>/minimal/user_policy.toml`
-  (https://minimal.dev/docs/reference/user-policy). Without it activation
-  prompts, and `--no-prompt` fails with the stanza to paste. `--no-hooks`
-  skips every hook for one activation.
+  resolves under `$LOADOUT_ROOT`, the `<name>/` directory beside
+  `<name>.toml`, not beside the file itself. A project declares the same
+  block one level down, as `[[session.lifecycle_hooks]]`, so a top-level copy
+  pasted into a `minimal.toml` is reported as an unknown field rather than
+  run.
+- YOUR loadout's hooks are your own files and run without a policy decision.
+  The `[hooks]` section of `<config>/minimal/user_policy.toml` arbitrates
+  the PROJECT that declares hooks, not your loadout
+  (https://minimal.dev/docs/reference/user-policy): an undecided project
+  prompts, and under `--no-prompt` fails the activation with the stanza to
+  paste. Do not tell a user to allow-list their loadout; there is nothing to
+  allow-list. `--no-hooks` skips every hook, from both origins, for one
+  activation.
 
   ```toml
   [hooks]
-  allow = ["/abs/path/to/project"]
+  allow = ["/abs/path/to/project"]   # the project, never the loadout
   ```
 - A hook's stdout AND stderr surface in the activation output, attributed to
   the loadout or project it came from, and capture is bounded by size as
@@ -93,8 +96,9 @@ Directives that prevent the common failures:
 
 ## Shell personalization: use vars, not rc files
 
-By default the attach shell is `bash --noprofile -l` and sources NO startup
-files, so patching `.bashrc`/`.bash_profile` does nothing to it. Setting
+By default the attach shell is
+`bash --noprofile --rcfile <daemon rc> -i`: the only file it reads is the
+daemon's own rc, so patching `.bashrc`/`.bash_profile` does nothing. Setting
 `SHELL` in `[vars]` to an installed known shell (with its package in the
 loadout) changes which shell attach opens: `SHELL = "/usr/bin/fish"` plus
 `packages = ["fish"]` lands you in fish. For bash, set shell config
