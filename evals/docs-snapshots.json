@@ -1,13 +1,13 @@
 {
-  "https://minimal.dev/docs/concepts/sessions": "3119e4b8b0feeced06d59fc9943334a6fa494f5fc657b46b7dde05cc063482b0",
-  "https://minimal.dev/docs/reference/build-specs": "23e4179393b84d8b4c301bdeeca04ad1716642bcc4f2f27669650f580d48bb8e",
+  "https://minimal.dev/docs/concepts/sessions": "bf81423a3d563f03ae9731799e41fe3a713d836408199d77c663c6075a6ac988",
+  "https://minimal.dev/docs/reference/build-specs": "4e40234267d608293e12a08af5401688e34e01e191d084b87f98743488a59e3c",
   "https://minimal.dev/docs/reference/cli": "a0d136b3df57a29b2a519fc623ee99219e92d3c2fe9c2426b952e8483c05d6bc",
-  "https://minimal.dev/docs/reference/cli-min": "6b128f849ab9cc2ede20facabbe848dc8980fa3f5ca170f4b3eab02d4b888f7e",
+  "https://minimal.dev/docs/reference/cli-min": "d3ebed799e08c11ccb2f12a5f4a09281d8e1f68bd34ba954b01d594be00b3e17",
   "https://minimal.dev/docs/reference/cli-mip": "20ffb8a022b0235e6362a6a113e2018fd8cccec91a67c9643ac11c321a697b0c",
-  "https://minimal.dev/docs/reference/loadouts": "b19f1675ab4fd5137be87e75b33013b381ce925574e6ff7661c82ddd64a0079e",
-  "https://minimal.dev/docs/reference/minimal-dot-toml": "8aa5a6a56fc82ee8e0a21a71858ca8b08a0f832bab67ea8985a34c697fd6d149",
+  "https://minimal.dev/docs/reference/loadouts": "bab95412e9bd875ebc8dbb9cc34b45943006c98b5d6a20e0b183e029005798e2",
+  "https://minimal.dev/docs/reference/minimal-dot-toml": "b10d15adf5fcdf7800336c0050fb921ce152236fbb7be728029b2f50e5f9fd12",
   "https://minimal.dev/docs/reference/sandbox-operations": "38267b5db81369056b3ada0cb85064c90b458f1a9fc8bb8d25e94d7d9f2614dc",
   "https://minimal.dev/docs/reference/stack-specs": "3625220e1648d639650ed80d0714214c0e33b85df83d047889daf42f7e9c8ceb",
-  "https://minimal.dev/docs/reference/tasks": "650b1cec261b96953bc1e3e77a7fcb78def624042fd08d4bf98e57f80a43fb78",
-  "https://minimal.dev/docs/reference/user-policy": "96e559c2db51fb844ffa0eb32b9e9e2d755ae0066ec0b869a89537988a4abb91"
+  "https://minimal.dev/docs/reference/tasks": "cf7c843b2a4ebcd9be0abc25b16622ce6327fe2c75b84866a9f33e07cd4e025a",
+  "https://minimal.dev/docs/reference/user-policy": "f4dd50d32977668a45b7c5161869928ac5cea158009ca4a6e10f78f82fa40df4"
 }
