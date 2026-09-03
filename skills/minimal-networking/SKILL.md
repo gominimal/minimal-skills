@@ -7,9 +7,11 @@ description: Experimental and subject to change. Use when previewing a dev serve
 
 Treat everything here as experimental and subject to change. This surface has
 no public docs on purpose: hostnames, ports, and flags were verified on
-2026-07-31, and the provider, host-alias, and network-mode claims were
-re-verified on 2026-08-26 against min 0.5.4-dev.23.g5e4c5ae1 (Linux aarch64),
-but none of it is a stable contract. For general `min` CLI context see
+2026-07-31; the provider, host-alias, and network-mode claims were
+re-verified on 2026-08-26 against min 0.5.4-dev.23.g5e4c5ae1 (Linux aarch64);
+and the proxy port, the session-hostname route and the 502 shape were
+re-checked on 2026-09-03 against min 0.5.4-dev.62.g30a3031d (macOS arm64).
+None of it is a stable contract. For general `min` CLI context see
 https://minimal.dev/docs/reference/cli-min (the only relevant public page).
 Do not cite or invent any other minimal.dev URL for networking topics; none
 exists.
@@ -150,11 +152,11 @@ curl http://127.0.0.1:4321/    # on the host, no proxy needed
 | `--ingress EXT:INT[/PROTO]` | Publish session port `INT` as `127.0.0.1:EXT` on the host. Repeatable. `PROTO` is `tcp` (default) or `udp`. Requires `--network own-ip`. |
 | `min session policy <session>` | Print the session's effective network policy as JSON. Works for any session. |
 
-`--network` and `--ingress` are not listed in `min session activate --help` on
-0.5.4-dev.23 — they are hidden, not removed. Both are still accepted and
-effective: `--ingress 4321:4321` produces a real `127.0.0.1:4321` listener on
-the host and a matching `port_mappings` entry in `min session policy`. Do not
-conclude from help output that they are gone.
+`--network` and `--ingress` are still absent from `min session activate
+--help` as of 0.5.4-dev.62; they are hidden, not removed. Both are still
+accepted and effective: `--ingress 4321:4321` produces a real
+`127.0.0.1:4321` listener on the host and a matching `port_mappings` entry in
+`min session policy`. Do not conclude from help output that they are gone.
 
 ## Sharp edges
 

@@ -178,7 +178,7 @@
       {
         "name": "response_matches",
         "args": {
-          "pattern": "noprofile|does not source|sources no|no startup files"
+          "pattern": "--rcfile|daemon'?s?( own)? rc"
         }
       },
       "docs_urls_valid"
@@ -318,6 +318,22 @@
       "Skill"
     ],
     "expected_checks": [],
+    "functional_asserts": []
+  },
+  {
+    "id": "loadouts-014",
+    "prompt": "Two hook problems in one repo. My loadout's [[lifecycle_hooks]] uses on_activate = \"echo hello\" and activation dies with 'invalid type: string, expected struct HookScriptRepr'. Separately, a headless activate of the project says a hook needs approval. What do I fix, and whose hook needs the approval?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      { "name": "response_matches", "args": { "pattern": "type\\s*=\\s*[\"']?(inline|external)" } },
+      { "name": "response_matches", "args": { "pattern": "allow\\s*=\\s*\\[" } },
+      { "name": "response_matches", "args": { "pattern": "project[^.\\n]{0,40}(root|path|director|declar)" } },
+      { "name": "response_matches", "args": { "pattern": "user_policy\\.toml" } }
+    ],
     "functional_asserts": []
   }
 ]

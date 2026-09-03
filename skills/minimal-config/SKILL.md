@@ -44,6 +44,13 @@ These are policy, not schema, and the reference will not tell you them:
 - **Profiles have been removed from Minimal.** Do not add a `profile` key, a
   `profiles/` directory, or a `--profiles` flag to anything, and treat any
   such leftovers in an existing config as stale.
+- **Read an unknown-field warning as a nesting error first.** The
+  `help: do you need to update to a newer version of minimal?` line appended
+  to it is a blanket suffix; upgrading usually fixes nothing. Check the key's
+  nesting against the schema instead. Lifecycle hooks are the common trap: a
+  loadout declares `[[lifecycle_hooks]]` at the top level, a project
+  `[[session.lifecycle_hooks]]`. The warning repeats once per decode, so one
+  activation prints it several times for a single mistake.
 - **Scaffold before hand-authoring.** Project init inspects the source tree,
   detects the stack, and proposes a config. Hand-author only when detection
   picks wrong or the layout is unusual, and validate either way.

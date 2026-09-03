@@ -86,6 +86,13 @@ justfile              local dev-loop recipes
 
 - Skills link the published docs at `minimal.dev` instead of restating them;
   the URL contract lives in [evals/SCHEMA.md](evals/SCHEMA.md).
+- Behavior claims are checked against a real install, and anything the
+  reference documents is linked rather than restated. The 0.4.0 pass was
+  verified on 2026-09-03 against min 0.5.4-dev.62.g30a3031d (macOS arm64,
+  minvmd + gvproxy); reference gaps found on the way are filed as
+  [#622](https://github.com/gominimal/inbox/issues/622),
+  [#623](https://github.com/gominimal/inbox/issues/623) and
+  [#624](https://github.com/gominimal/inbox/issues/624) in gominimal/inbox.
 - `minimal-networking` is experimental: its surface has no public docs (that
   is intentional), so it carries inline knowledge and may change or break
   without notice.

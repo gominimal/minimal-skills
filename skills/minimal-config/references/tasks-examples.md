@@ -39,20 +39,17 @@ echo = "Docs live at https://minimal.dev/docs/reference/minimal-dot-toml"
 [tasks.integration]
 packages = ["postgresql-client"]         # Only this task gets psql.
 env_vars.RAILS_ENV = "test"              # Fixed value.
-env_vars.TEST_SHARD = { inherit = true }  # Intended: copied from the host env.
-                                         # CAVEAT: on the shipped daemon this
-                                         # resolves daemon-side, so a var
-                                         # exported in YOUR shell is not found
-                                         # and the task fails at spawn with
-                                         # "inheriting environment variable
-                                         # 'X': environment variable not
-                                         # found". Only [session.vars] resolves
-                                         # client-side today.
+env_vars.TEST_SHARD = { inherit = true }  # From the shell that runs the task,
+                                         # and gated: allow-list the name
+                                         # under [vars] in user_policy.toml
+                                         # first. See the user-policy page.
 patches.dir."~/.cache/test-fixtures" = "read-only"   # Host dir, read-only.
 patches.file."~/.config/myapp/test.toml" = "read-only"  # Single host file.
 state_key = "integration"                # Cache state across runs.
 inherit_cwd = true                       # Start where invoked, not repo root.
 ```
+
+User policy: https://minimal.dev/docs/reference/user-policy
 
 Map host paths read-only unless the task genuinely writes them. `read-only`
 stops the task writing the path, not reading it, so never map a credential
