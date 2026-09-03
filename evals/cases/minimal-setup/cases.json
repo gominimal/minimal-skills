@@ -321,5 +321,34 @@
       { "name": "response_matches", "args": { "pattern": "local-minvmd" } }
     ],
     "functional_asserts": []
+  },
+  {
+    "id": "setup-019",
+    "prompt": "From CI I need our test suite to run inside a Minimal session, non-interactively. What is the supported way to do that?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      { "name": "response_matches", "args": { "pattern": "min task run" } },
+      "activate_no_prompt",
+      "docs_urls_valid"
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "setup-020",
+    "prompt": "My CI job runs six `min session activate --no-prompt` calls in parallel on a fresh runner. Five die with 'Failed to ensure the minimald daemon is running ... the detached supervisor exited during startup'. Is the VM broken?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      { "name": "response_matches", "args": { "pattern": "race|autospawn|concurren|at the same time|simultaneous" } },
+      { "name": "response_matches", "args": { "pattern": "min ls|warm|daemon first|one .{0,25}command first" } }
+    ],
+    "functional_asserts": []
   }
 ]

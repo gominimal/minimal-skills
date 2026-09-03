@@ -70,8 +70,11 @@ Not covered by the public reference, so treat this as the record:
 - In a session, work in `/workbench`; it is the durable project workspace.
 - Session `/tmp` is ephemeral between attaches. Stage anything that must
   survive under `/workbench`, never in `/tmp`.
-- The attach shell is `bash --noprofile -l` and sources no rc files, so
-  edits to `~/.bashrc` or `~/.profile` never take effect. Shell
-  personalization belongs in a loadout, configured from the host.
+- The attach shell is `bash --noprofile -l` unless the session was composed
+  with `SHELL` naming an installed known shell (fish, for example), in which
+  case that shell is what attach opens; read `$SHELL` before assuming bash.
+  Bash here sources no rc files, so edits to `~/.bashrc` or `~/.profile`
+  never take effect. Shell personalization belongs in a loadout, configured
+  from the host.
 - In a task sandbox, the project tree is the working copy; assume nothing
   outside it survives the task.

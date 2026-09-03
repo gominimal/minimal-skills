@@ -319,5 +319,19 @@
     ],
     "expected_checks": [],
     "functional_asserts": []
+  },
+  {
+    "id": "loadouts-014",
+    "prompt": "My loadout has [[lifecycle_hooks]] with on_activate = \"echo hello\" and activation fails with 'invalid type: string, expected struct HookScriptRepr'. After I fix that, a headless activate refuses to run the hook at all. What do I need?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      { "name": "response_matches", "args": { "pattern": "type\\s*=\\s*[\"']inline[\"']|type\\s*=\\s*[\"']external[\"']" } },
+      { "name": "response_matches", "args": { "pattern": "user_policy\\.toml|\\[hooks\\]" } }
+    ],
+    "functional_asserts": []
   }
 ]

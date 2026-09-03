@@ -6,10 +6,12 @@ description: Use when the user wants to install Minimal, set up a project with m
 # Minimal setup and sessions
 
 Minimal gives every project a declarative, sandboxed dev environment called a
-session. `min` is the session CLI; `mip` is the package/build CLI. Read the
-session model at https://minimal.dev/docs/concepts/sessions and the full
-command reference at https://minimal.dev/docs/reference/cli-min instead of
-guessing flags.
+session. `min` is the session CLI; `mip` is the package/build CLI, and there
+is no native macOS `mip`, so never send a macOS user to it:
+https://minimal.dev/docs/reference/cli
+Read the session model at https://minimal.dev/docs/concepts/sessions and the
+full command reference at https://minimal.dev/docs/reference/cli-min instead
+of guessing flags.
 
 ## Install
 
@@ -40,6 +42,11 @@ from a VCS root (`.git`, `.hg`, ...). For a directory that is not a VCS root,
 pass `--sync tarball` explicitly; otherwise the upload is gated, and headless
 runs skip it with a warning.
 
+A missing `minimal.toml` no longer blocks activation: `min` reports it, gives
+the session a default environment, points at `min init`, and continues
+without writing a file. `--loadout` is validated first, so an unknown loadout
+errors by name even there.
+
 ## Providers on Linux
 
 On Linux, `min` can host sessions two ways, and the choice changes how a
@@ -56,7 +63,7 @@ macOS has no choice to make: minvmd is the only backend there, so `--provider`
 has no effect.
 
 Sessions belong to the provider that created them. `min ls` lists only the
-default provider's sessions, so pass the same `--provider` to `ls`, `exec`, and
+default provider's sessions, so pass the same `--provider` to `ls` and
 `destroy` that you passed to `activate` — otherwise the session looks like it
 vanished. For what the choice means when reaching the host or a peer session,
 use minimal-networking.
@@ -68,6 +75,14 @@ use minimal-networking.
 - `min session attach [SESSION]` re-enters a session by name or id; with no
   argument it resolves from the current directory. Exiting the shell detaches;
   the session keeps running.
+- Detach without exiting with the chord the attach banner prints, and
+  rebind its leader under `[session-keys]` in `<config>/minimal/config.toml`:
+  https://minimal.dev/docs/reference/loadouts
+- The attach shell is `bash --noprofile -l` unless the composed `SHELL` names
+  an installed known shell: `SHELL = "/usr/bin/fish"` under `[session.vars]`
+  plus the `fish` package opens fish on attach.
+- `min session hooks <SESSION>` lists the activation hooks the session
+  composed, attributed to the project or loadout each came from.
 - `min session rename <SESSION> <NEW_NAME>` renames a session.
 - `min session destroy <SESSION>` removes one session;
   `min session destroy --all` removes every session (`-f` skips confirmation).
@@ -85,31 +100,38 @@ https://minimal.dev/docs/reference/sandbox-operations
   when stdin is not a TTY, but pass it explicitly so intent is visible.
 - Inherited vars need approval, so allow-list them BEFORE the first headless
   run rather than after it. Every `{ inherit = true }` name is gated by
-  `<config>/minimal/user_policy.toml`; `--no-prompt` prints a ready-to-paste
-  snippet naming what is missing, but only once it has already failed:
+  `<config>/minimal/user_policy.toml`
+  (https://minimal.dev/docs/reference/user-policy); `--no-prompt` prints a
+  ready-to-paste snippet naming what is missing, but only once it failed:
 
   ```toml
   [vars]
   allow = ["MY_TOKEN", "CI_*"]   # exact names or globs
   ```
-- `min session exec` output is not safe to parse as-is, and this bites
-  scripts specifically:
-  - The first stdout line arrives EMPTY. The content is lost and the line is
-    not, so skipping line one still reads a wrong value; there is no offset
-    that recovers it. Read what you need from line two onward, or have the
-    command write to a file in the workspace and read that.
-  - It space-joins its argv and re-evaluates the result, destroying quoting.
-    A command carrying quoted arguments or shell operators does not survive
-    intact — put it in a script file in the workspace and exec that instead.
-  - It waits for its stdout pipe to close, so a backgrounded grandchild that
-    inherited it holds the call open until that process exits. Redirect the
-    child (`>/dev/null 2>&1 &`) to detach.
+- Lifecycle hooks are gated by the same file, keyed on PROJECT path rather
+  than on the hook: both a project's and an applied loadout's hooks need that
+  directory allow-listed under `[hooks]`, or `--no-prompt` fails with the
+  stanza to paste. `--no-hooks` skips every hook for one activation.
+
+  ```toml
+  [hooks]
+  allow = ["/abs/path/to/project"]
+  ```
+- Run non-interactive work as a declared task, `min task run <TASK>`, rather
+  than an ad-hoc command: a task is committed, reviewable, and carries its
+  own packages, env, and policy. The minimal-config skill owns the schema:
+  https://minimal.dev/docs/reference/tasks
+- Do not fan out concurrent `min` commands from a cold state. With no daemon
+  running each client races to autospawn one, and the losers fail with
+  `Failed to ensure the minimald daemon is running: ... the detached
+  supervisor exited during startup`, which is untrue: the VM started and the
+  winner's session is healthy. Warm the daemon with one `min ls`, then
+  parallelize.
 - Read session state with `min session list --json` (or `--raw` for bare ids
   one per line). Never parse the human-readable table.
 - `min session attach` opens an interactive shell and takes no command
-  argument. Run a one-off command in an existing session with `min session
-  exec <session> <command>...`, and a declared task with `min task run
-  <task>`. Confirm both against `min session --help` before scripting them.
+  argument; scripted work belongs in a task. Confirm any flag against
+  `min session --help` before scripting it.
 - Commits made in a session's workspace come back to the host checkout with
   `git push min://<session>`, run from inside the session.
 
