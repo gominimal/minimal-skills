@@ -78,9 +78,9 @@ use minimal-networking.
 - Detach without exiting with the chord the attach banner prints, and
   rebind its leader under `[session-keys]` in `<config>/minimal/config.toml`:
   https://minimal.dev/docs/reference/loadouts
-- The attach shell is `bash --noprofile -l` unless the composed `SHELL` names
-  an installed known shell: `SHELL = "/usr/bin/fish"` under `[session.vars]`
-  plus the `fish` package opens fish on attach.
+- The attach shell is `bash --noprofile --rcfile <daemon rc> -i` unless the
+  composed `SHELL` names an installed known shell: `SHELL = "/usr/bin/fish"`
+  under `[session.vars]` plus the `fish` package opens fish on attach.
 - `min session hooks <SESSION>` lists the activation hooks the session
   composed, attributed to the project or loadout each came from.
 - `min session rename <SESSION> <NEW_NAME>` renames a session.
@@ -111,8 +111,9 @@ https://minimal.dev/docs/reference/sandbox-operations
 - A project that declares lifecycle hooks is arbitrated by the same file's
   `[hooks]` section, keyed on the project root: undecided means a prompt, so
   `--no-prompt` fails with the stanza to paste. Hooks from the user's own
-  loadouts are not arbitrated and need no entry. `--no-hooks` skips every
-  hook for one activation.
+  loadouts are not arbitrated and need no entry. `--no-hooks` is recorded on
+  the session, so it skips hooks at the later attach, detach, and destroy
+  transitions too, not only at this activation.
 
   ```toml
   [hooks]

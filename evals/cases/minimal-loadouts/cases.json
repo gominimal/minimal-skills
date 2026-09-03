@@ -178,7 +178,7 @@
       {
         "name": "response_matches",
         "args": {
-          "pattern": "noprofile|does not source|sources no|no startup files"
+          "pattern": "--rcfile|daemon'?s?( own)? rc"
         }
       },
       "docs_urls_valid"

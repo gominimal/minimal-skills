@@ -80,8 +80,9 @@ Directives that prevent the common failures:
   (https://minimal.dev/docs/reference/user-policy): an undecided project
   prompts, and under `--no-prompt` fails the activation with the stanza to
   paste. Do not tell a user to allow-list their loadout; there is nothing to
-  allow-list. `--no-hooks` skips every hook, from both origins, for one
-  activation.
+  allow-list. `--no-hooks` skips every hook from both origins and is recorded on
+  the session, so it holds for the later attach, detach, and destroy
+  transitions too.
 
   ```toml
   [hooks]
