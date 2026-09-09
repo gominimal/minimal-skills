@@ -160,9 +160,13 @@ accepted and effective: `--ingress 4321:4321` produces a real
 
 ## Sharp edges
 
-- Port 7654 is fixed. If anything else on the host holds it, the publish
-  fails silently. First debugging step, always:
-  `lsof -nP -iTCP:7654 -sTCP:LISTEN`.
+- Port 7654 is fixed. If anything else on the host holds it, the daemon says
+  so at startup — `warning: session hostnames will not route: the daemon
+  could not publish port 7654 ... bind: address already in use` — and then
+  runs on without hostname routing. Confirm the holder with
+  `lsof -nP -iTCP:7654 -sTCP:LISTEN`. The daemon does not retry once the port
+  frees: free it, then `min stop` and let the next `min` command respawn the
+  daemon, or routing stays down for the life of that daemon.
 - Everything binds loopback only; there is no public URL. Bring your own
   tunnel (for example cloudflared) pointed at the routed port.
 - An unknown hostname returns a well-formed `502 Bad Gateway` carrying
