@@ -74,7 +74,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
             "extra attempts for a REGRESSION case that fails, to absorb model "
             "nondeterminism (default: 2). A case passes if any attempt passes; "
             "0 disables. Only failures cost anything: a green suite never retries. "
-            "Ignored under --without-skill, which always runs one attempt"
+            "Ignored under --without-skill, which always runs one attempt "
+            "of one trial"
         ),
     )
     parser.add_argument(
@@ -605,7 +606,9 @@ def main(argv: list[str] | None = None) -> int:
         case_id = case.get("id", "?")
         suite = case.get("suite", "regression")
         tier = case.get("tier", "text")
-        trials_n = case.get("trials") or args.trials
+        # One trial per case in obsolescence mode, whatever --trials or the
+        # case says: the budget must not depend on a workflow flag staying put.
+        trials_n = 1 if args.without_skill else (case.get("trials") or args.trials)
         print(
             f"[{case_id}] skill={skill} suite={suite} tier={tier} trials={trials_n}",
             file=sys.stderr,
