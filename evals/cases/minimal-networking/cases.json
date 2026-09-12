@@ -289,6 +289,7 @@
     "expected_checks": [
       { "name": "response_matches", "args": { "pattern": "min stop" } },
       { "name": "response_matches", "args": { "pattern": "(does\\s+not|doesn'?t|won'?t|will\\s+not|never)\\s+retr(y|ies)" } },
+      { "name": "response_matches", "args": { "pattern": "respawn|restart|next .{0,30}min|min ls|start(s|ed)? (it|the daemon|a new daemon|again)" } },
       "docs_urls_valid"
     ],
     "functional_asserts": []

@@ -131,9 +131,11 @@ https://minimal.dev/docs/reference/sandbox-operations
   https://minimal.dev/docs/reference/tasks
 - For one-off work against a session you already have, `min session exec
   <SESSION> <COMMAND>...` is the right lane. It composes the session's
-  packages onto PATH, its output is complete from the first line, and argv is
-  passed through without re-quoting. Do not build a repeatable pipeline on it;
-  do not avoid it for a single command.
+  packages onto PATH, its output is complete from the first line, argv is
+  passed through without re-quoting, and a backgrounded child that inherits
+  its stdout does not hold the call open (all three reproduced on released
+  0.5.4; `sh -c 'sleep 8 & echo started'` returns in under a second). Do not
+  build a repeatable pipeline on it; do not avoid it for a single command.
 - Do not fan out concurrent `min` commands from a cold state. With no daemon
   running each client races to autospawn one, and the losers fail with
   `Failed to ensure the minimald daemon is running: ... the detached
@@ -154,7 +156,7 @@ https://minimal.dev/docs/reference/sandbox-operations
   environment variable not found` even when `X` is exported in the shell that
   typed the command. `min task run` resolves the same declaration on the
   client and works. Until this is fixed, carry secrets with `min task run`
-  (ephemeral session) or `[session.vars]` at activation — never
+  (task sandbox) or `[session.vars]` at activation — never
   `min session run`.
 - Commits made in a session's workspace come back to the host checkout with
   `git push min://<session>`, run from inside the session.
