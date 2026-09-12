@@ -31,7 +31,7 @@
   },
   {
     "id": "net-003",
-    "prompt": "my two default minimal sessions on the same linux host need to talk to each other. neither uses own-ip.",
+    "prompt": "my two default minimal sessions on the same linux host need to reach each other by session name, not by port number. neither uses own-ip.",
     "should_trigger": true,
     "tier": "text",
     "suite": "regression",
