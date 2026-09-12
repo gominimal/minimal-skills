@@ -432,12 +432,17 @@ def run_trial(
         # instead of grading it (observed: a shared-token rate limit turned
         # the tail of a nightly run into ~1s failures recorded as skill
         # regressions).
+        # --without-skill never retries, this loop included: under a dead or
+        # exhausted token every call fails in ~1s, and 91 cases x 60s of
+        # backoff is a 90-minute job that produces no report. One attempt,
+        # recorded as an infra error, is the whole budget there.
+        backoffs = (0,) if args.without_skill else (0, 15, 45)
         events: list[dict] = []
-        for attempt, backoff_s in enumerate((0, 15, 45)):
+        for attempt, backoff_s in enumerate(backoffs):
             if backoff_s:
                 print(
                     f"  infra error; retrying in {backoff_s}s "
-                    f"(attempt {attempt + 1}/3)",
+                    f"(attempt {attempt + 1}/{len(backoffs)})",
                     file=sys.stderr,
                 )
                 time.sleep(backoff_s)

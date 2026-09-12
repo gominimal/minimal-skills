@@ -137,12 +137,14 @@ jobs:
     # still runs when a functional lane fails.
     #
     # One trial per case, and the runner never retries in --without-skill
-    # mode. With the skills absent nearly every case fails, and a failed
-    # regression case costs every trial of every attempt: at 3 trials that
-    # was 9 claude calls (~3 min) per case, the job reached 41 of 91 text
-    # cases before its 90-minute timeout, and it was cancelled with no report
-    # on 22 of the 25 nights to 2026-09-11. The whole tier is now ~91 calls,
-    # about 30 minutes; 60 leaves room for a slow API day.
+    # mode, neither the failed-case retry nor the infra-error backoff. With
+    # the skills absent nearly every case fails, and a failed regression case
+    # costs every trial of every attempt: at 3 trials that was 9 claude calls
+    # (~3 min) per case, the job reached 41 of 91 text cases before its
+    # 90-minute timeout, and it was cancelled with no report on 22 of the 25
+    # nights to 2026-09-11. The whole tier is now at most 91 calls, about 30
+    # minutes; 60 leaves room for a slow API day, and a dead token now costs
+    # ~1s per case instead of 60s of backoff.
     needs: functional
     if: always()
     runs-on: ubuntu-latest
