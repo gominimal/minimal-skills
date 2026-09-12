@@ -137,18 +137,16 @@ jobs:
     # still runs when a functional lane fails.
     #
     # One trial per case, and the runner never retries in --without-skill
-    # mode, neither the failed-case retry nor the infra-error backoff. With
-    # the skills absent nearly every case fails, and a failed regression case
-    # costs every trial of every attempt: at 3 trials that was 9 claude calls
-    # (~3 min) per case, the job reached 41 of 91 text cases before its
-    # 90-minute timeout, and it was cancelled with no report on 22 of the 25
-    # nights to 2026-09-11. The whole tier is now at most 91 calls, about 30
-    # minutes; 60 leaves room for a slow API day, and a dead token now costs
-    # ~1s per case instead of 60s of backoff.
+    # mode, neither the failed-case retry nor the infra-error backoff, so the
+    # tier is at most one claude call per case (91 as of 2026-09-12). At the
+    # usual ~20s a call that is about 30 minutes; 90 covers a 60s-a-call day.
+    # Before this the job reached 41 of 91 cases and was cancelled with no
+    # report on 22 of the 25 nights to 2026-09-11. The runner now rewrites
+    # the report after every case, so a timeout still uploads what finished.
     needs: functional
     if: always()
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 90
     continue-on-error: true
     steps:
       - uses: actions/checkout@v4

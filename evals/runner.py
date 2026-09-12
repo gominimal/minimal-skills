@@ -433,9 +433,7 @@ def run_trial(
         # instead of grading it (observed: a shared-token rate limit turned
         # the tail of a nightly run into ~1s failures recorded as skill
         # regressions).
-        # --without-skill never retries, this loop included: under a dead or
-        # exhausted token every call fails in ~1s, and 91 cases x 60s of
-        # backoff is a 90-minute job that produces no report. One attempt,
+        # --without-skill never retries, this loop included: one attempt,
         # recorded as an infra error, is the whole budget there.
         backoffs = (0,) if args.without_skill else (0, 15, 45)
         events: list[dict] = []
@@ -557,20 +555,47 @@ def render_summary(case_reports: list[dict], totals: dict) -> str:
     return "\n".join(lines)
 
 
+def write_outputs(args: argparse.Namespace, case_reports: list[dict],
+                  partial: bool) -> tuple[list[dict], dict]:
+    """Write the JSON report and markdown summary for the cases so far."""
+    regression = [c for c in case_reports if c["suite"] == "regression"]
+    capability = [c for c in case_reports if c["suite"] == "capability"]
+    totals = {
+        "regression_pass_rate": pass_rate(regression),
+        "capability_pass_rate": pass_rate(capability),
+    }
+    if args.report:
+        report = {
+            "run": {
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "args": vars(args),
+                "partial": partial,
+            },
+            "cases": case_reports,
+            "totals": totals,
+        }
+        report_path = Path(args.report)
+        report_path.parent.mkdir(parents=True, exist_ok=True)
+        report_path.write_text(json.dumps(report, indent=2) + "\n")
+        if not partial:
+            print(f"report written to {report_path}", file=sys.stderr)
+    if args.summary:
+        summary_path = Path(args.summary)
+        summary_path.parent.mkdir(parents=True, exist_ok=True)
+        summary_path.write_text(render_summary(case_reports, totals))
+        if not partial:
+            print(f"summary written to {summary_path}", file=sys.stderr)
+    return regression, totals
+
+
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
 
     if args.lint_urls:
         return lint_urls()
 
-    # Obsolescence mode measures whether the bare model passes, and a
-    # retry-until-pass loop measures whether it CAN pass, which is a different
-    # question. It is also what made the nightly canary uncompletable: with the
-    # skills absent nearly every regression case fails, and a failed case costs
-    # every trial of every attempt, so at 3 trials each case was 9 claude calls
-    # (~3 min) and the job reached 41 of 91 cases before its timeout, night
-    # after night. One attempt per case is both the honest and the affordable
-    # number.
+    # Obsolescence mode measures whether the bare model passes; a
+    # retry-until-pass loop measures whether it CAN pass, a different question.
     if args.without_skill:
         args.retries = 0
 
@@ -661,33 +686,11 @@ def main(argv: list[str] | None = None) -> int:
             f"({n_pass}/{len(trials)} trials){note}",
             file=sys.stderr,
         )
+        # Rewrite the outputs after every case so a job timeout leaves the
+        # cases that did finish on disk instead of nothing.
+        write_outputs(args, case_reports, partial=True)
 
-    regression = [c for c in case_reports if c["suite"] == "regression"]
-    capability = [c for c in case_reports if c["suite"] == "capability"]
-    totals = {
-        "regression_pass_rate": pass_rate(regression),
-        "capability_pass_rate": pass_rate(capability),
-    }
-
-    if args.report:
-        report = {
-            "run": {
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-                "args": vars(args),
-            },
-            "cases": case_reports,
-            "totals": totals,
-        }
-        report_path = Path(args.report)
-        report_path.parent.mkdir(parents=True, exist_ok=True)
-        report_path.write_text(json.dumps(report, indent=2) + "\n")
-        print(f"report written to {report_path}", file=sys.stderr)
-
-    if args.summary:
-        summary_path = Path(args.summary)
-        summary_path.parent.mkdir(parents=True, exist_ok=True)
-        summary_path.write_text(render_summary(case_reports, totals))
-        print(f"summary written to {summary_path}", file=sys.stderr)
+    regression, totals = write_outputs(args, case_reports, partial=False)
 
     regression_failed = [c for c in regression if not c["passed"]]
     if regression_failed:
