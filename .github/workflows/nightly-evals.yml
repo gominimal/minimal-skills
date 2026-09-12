@@ -135,10 +135,18 @@ jobs:
     # Serialized after functional (same shared-token rationale as the
     # functional matrix's max-parallel: 1). always() so the advisory canary
     # still runs when a functional lane fails.
+    #
+    # One trial per case, and the runner never retries in --without-skill
+    # mode. With the skills absent nearly every case fails, and a failed
+    # regression case costs every trial of every attempt: at 3 trials that
+    # was 9 claude calls (~3 min) per case, the job reached 41 of 91 text
+    # cases before its 90-minute timeout, and it was cancelled with no report
+    # on 22 of the 25 nights to 2026-09-11. The whole tier is now ~91 calls,
+    # about 30 minutes; 60 leaves room for a slow API day.
     needs: functional
     if: always()
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 60
     continue-on-error: true
     steps:
       - uses: actions/checkout@v4
@@ -156,7 +164,7 @@ jobs:
         run: |
           mkdir -p evals/reports
           uv run --project evals evals/runner.py --tier text --without-skill \
-            --trials 3 --skip-permissions \
+            --trials 1 --skip-permissions \
             --report evals/reports/obsolescence.json --summary summary.md
       - name: Publish summary
         if: always()
@@ -174,14 +182,31 @@ jobs:
     # Canary, no LLM: hash the PROSE of the published minimal.dev pages the
     # skills link and compare against the committed snapshot. Content drift
     # means a skill may be restating (or contradicting) stale docs. Site
-    # chrome is excluded deliberately: see evals/docs_hash.py. BLOCKING.
+    # chrome is excluded deliberately: see evals/docs_hash.py.
+    #
+    # Drift is a warning plus a re-baseline pull request, not a failure. It
+    # used to fail the job, and the re-baseline was a manual edit nobody
+    # made: the lane sat red on 17 of the 25 nights to 2026-09-11 for pages
+    # whose only fix was committing the JSON the job had already printed.
+    # Now the job writes the fresh snapshot and opens (or updates) a PR on
+    # chore/docs-snapshot-rebaseline carrying it, so a human reviews the
+    # diff and merging clears the canary. The job fails only when a page
+    # cannot be fetched or hashed, or when the PR cannot be raised: those
+    # are the canary itself being broken. BLOCKING on those.
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: write
+    outputs:
+      drift: ${{ steps.drift.outputs.drift }}
+      pr-url: ${{ steps.pr.outputs.pull-request-url }}
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
       - name: Check linked docs pages for drift
+        id: drift
         shell: bash
         run: |
           set -euo pipefail
@@ -202,54 +227,121 @@ jobs:
           if [ ! -f "$snapshot" ]; then
             echo "::warning::$snapshot does not exist yet. Commit the JSON below as $snapshot to arm this canary."
             echo "$current_json"
+            echo "drift=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          drift=0
+          changed=()
           for url in "${urls[@]}"; do
             old="$(jq -r --arg u "$url" '.[$u] // empty' "$snapshot")"
             if [ -z "$old" ]; then
               echo "NEW (not in snapshot): $url"
-              drift=1
+              changed+=("NEW: $url")
             elif [ "$old" != "${current[$url]}" ]; then
               echo "CHANGED: $url"
-              drift=1
+              changed+=("CHANGED: $url")
             fi
           done
-          if [ "$drift" -ne 0 ]; then
-            echo "::error::Docs drift detected. Review the pages above, update the skills if needed, then commit this as $snapshot:"
-            echo "$current_json"
-            exit 1
+          if [ "${#changed[@]}" -eq 0 ]; then
+            echo "drift=false" >> "$GITHUB_OUTPUT"
+            echo "No drift across ${#urls[@]} linked docs pages."
+            exit 0
           fi
-          echo "No drift across ${#urls[@]} linked docs pages."
+          # The fresh baseline, in docs_hash.py's own format, for the PR step
+          # to commit. Pages no longer linked drop out of the file with it.
+          printf '%s\n' "$current_json" > "$snapshot"
+          {
+            echo "drift=true"
+            echo "changed<<CHANGED_EOF"
+            printf -- '- %s\n' "${changed[@]}"
+            echo "CHANGED_EOF"
+          } >> "$GITHUB_OUTPUT"
+          {
+            echo "## Docs drift (${#changed[@]} of ${#urls[@]} linked pages)"
+            echo
+            printf -- '- %s\n' "${changed[@]}"
+            echo
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "::warning::Docs drift on ${#changed[@]} linked page(s): ${changed[*]}. Re-check the skills that cite them; a re-baseline PR follows."
+      - name: Open or update the re-baseline pull request
+        id: pr
+        if: steps.drift.outputs.drift == 'true'
+        uses: peter-evans/create-pull-request@22a9089034f40e5a961c8808d113e2c98fb63676 # v7.0.11
+        with:
+          branch: chore/docs-snapshot-rebaseline
+          delete-branch: true
+          add-paths: evals/docs-snapshots.json
+          commit-message: "chore(evals): re-baseline the docs drift canary"
+          title: "chore(evals): re-baseline the docs drift canary"
+          body: |
+            The nightly docs-drift canary found these linked minimal.dev pages changed since the committed snapshot:
+
+            ${{ steps.drift.outputs.changed }}
+
+            Re-read each page against the skill that cites it and adjust the skill if the docs now say something different. `evals/docs-snapshots.json` here is the exact output of `evals/docs_hash.py` for the pages as of this run; merging accepts it as the new baseline and clears the canary.
+
+            Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      - name: Report the re-baseline pull request
+        if: steps.drift.outputs.drift == 'true'
+        env:
+          PR_URL: ${{ steps.pr.outputs.pull-request-url }}
+          PR_OP: ${{ steps.pr.outputs.pull-request-operation }}
+        run: |
+          echo "::warning::Docs drift re-baseline PR ($PR_OP): $PR_URL"
+          echo "Re-baseline PR ($PR_OP): $PR_URL" >> "$GITHUB_STEP_SUMMARY"
 
   notify:
     # Open or update a single tracking issue when a blocking nightly job
-    # fails. obsolescence is continue-on-error, so it never lands here.
+    # fails, and post the same to Slack. obsolescence is continue-on-error,
+    # so it never lands here; docs drift alone does not either, its report
+    # is the re-baseline PR.
     needs: [text, functional, obsolescence, docs-drift]
     if: failure()
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - name: Open or update the nightly-evals tracking issue
+        id: issue
         env:
           GH_TOKEN: ${{ github.token }}
+          REPO_URL: ${{ github.server_url }}/${{ github.repository }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          TEXT: ${{ needs.text.result }}
           FUNCTIONAL: ${{ needs.functional.result }}
           OBSOLESCENCE: ${{ needs.obsolescence.result }}
           DOCS_DRIFT: ${{ needs.docs-drift.result }}
+          DRIFT_PR: ${{ needs.docs-drift.outputs.pr-url }}
         run: |
           set -euo pipefail
           # Dedup by label, not title search: label filtering is immediately
           # consistent, so back-to-back failures cannot open duplicates.
           gh label create nightly --repo "$GITHUB_REPOSITORY" \
             --color B60205 --description "Nightly eval failure" 2>/dev/null || true
-          body="$(printf 'A nightly-evals run failed.\n\n- functional: %s\n- obsolescence (advisory): %s\n- docs-drift: %s\n\nRun: %s' \
-            "$FUNCTIONAL" "$OBSOLESCENCE" "$DOCS_DRIFT" "$RUN_URL")"
+          drift_note=""
+          if [ -n "$DRIFT_PR" ]; then
+            drift_note=" (re-baseline PR: $DRIFT_PR)"
+          fi
+          body="$(printf 'A nightly-evals run failed.\n\n- text: %s\n- functional: %s\n- obsolescence (advisory): %s\n- docs-drift: %s%s\n\nRun: %s' \
+            "$TEXT" "$FUNCTIONAL" "$OBSOLESCENCE" "$DOCS_DRIFT" "$drift_note" "$RUN_URL")"
           existing="$(gh issue list --repo "$GITHUB_REPOSITORY" --state open \
             --label nightly --json number --jq '.[0].number // empty')"
           if [ -n "$existing" ]; then
             gh issue comment "$existing" --repo "$GITHUB_REPOSITORY" --body "$body"
+            url="$REPO_URL/issues/$existing"
           else
-            gh issue create --repo "$GITHUB_REPOSITORY" \
-              --title "nightly-evals failure" --body "$body" --label nightly
+            url="$(gh issue create --repo "$GITHUB_REPOSITORY" \
+              --title "nightly-evals failure" --body "$body" --label nightly)"
           fi
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+      - name: Notify Slack
+        # Fails soft until the SLACK_WEBHOOK_URL secret is set on this repo.
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 5
+        uses: slackapi/slack-github-action@dcb1066f776dd043e64d0e8ba94ca15cc7e1875d # v4.0.0
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            {
+              "text": "*nightly-evals failed:* `${{ github.repository }}`\nJobs: text=${{ needs.text.result }}, functional=${{ needs.functional.result }}, obsolescence=${{ needs.obsolescence.result }}, docs-drift=${{ needs.docs-drift.result }}\nIssue: ${{ steps.issue.outputs.url || 'unknown' }}\nRun: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            }
