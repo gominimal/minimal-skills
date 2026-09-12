@@ -73,7 +73,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help=(
             "extra attempts for a REGRESSION case that fails, to absorb model "
             "nondeterminism (default: 2). A case passes if any attempt passes; "
-            "0 disables. Only failures cost anything: a green suite never retries"
+            "0 disables. Only failures cost anything: a green suite never retries. "
+            "Ignored under --without-skill, which always runs one attempt"
         ),
     )
     parser.add_argument(
@@ -555,6 +556,17 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.lint_urls:
         return lint_urls()
+
+    # Obsolescence mode measures whether the bare model passes, and a
+    # retry-until-pass loop measures whether it CAN pass, which is a different
+    # question. It is also what made the nightly canary uncompletable: with the
+    # skills absent nearly every regression case fails, and a failed case costs
+    # every trial of every attempt, so at 3 trials each case was 9 claude calls
+    # (~3 min) and the job reached 41 of 91 cases before its timeout, night
+    # after night. One attempt per case is both the honest and the affordable
+    # number.
+    if args.without_skill:
+        args.retries = 0
 
     if shutil.which("claude") is None:
         print("error: claude CLI not found on PATH", file=sys.stderr)

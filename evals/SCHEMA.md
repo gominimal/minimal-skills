@@ -124,7 +124,7 @@ it to this table in the same change that implements it in `checks.py`.
 --tier text|functional|all      default text
 --suite regression|capability|all   default all
 --trials N          default 1
---retries N         extra attempts for a failed regression case; default 2, 0 disables
+--retries N         extra attempts for a failed regression case; default 2, 0 disables; ignored under --without-skill
 --without-skill     obsolescence mode: skills not installed into the workspace
 --judge             enable the LLM style judge (off by default)
 --model M           model passed to claude CLI; default sonnet
@@ -160,6 +160,11 @@ that makes a flaky case fail *more* often, and with ~70 regression cases the
 per-case failure probabilities compound: at 99% each, an all-green run is
 roughly a coin flip. Retrying failures is what keeps the gate both strict and
 achievable.
+
+`--without-skill` never retries: the obsolescence canary asks whether the
+bare model passes, not whether it can pass on its best attempt, and with the
+skills absent nearly every case fails, so retries would multiply an already
+mostly-failing run by the attempt count.
 
 A case that passes only on a retry is reported as `flaky` (in the JSON report
 and listed in the markdown summary). That is not a build failure, but it marks
