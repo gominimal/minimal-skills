@@ -690,7 +690,7 @@ def main(argv: list[str] | None = None) -> int:
         # cases that did finish on disk instead of nothing.
         write_outputs(args, case_reports, partial=True)
 
-    regression, totals = write_outputs(args, case_reports, partial=False)
+    regression, _ = write_outputs(args, case_reports, partial=False)
 
     regression_failed = [c for c in regression if not c["passed"]]
     if regression_failed:
