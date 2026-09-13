@@ -123,8 +123,8 @@ it to this table in the same change that implements it in `checks.py`.
 --skill NAME        repeatable; default all skills
 --tier text|functional|all      default text
 --suite regression|capability|all   default all
---trials N          default 1
---retries N         extra attempts for a failed regression case; default 2, 0 disables
+--trials N          default 1; ignored under --without-skill (always 1)
+--retries N         extra attempts for a failed regression case; default 2, 0 disables; ignored under --without-skill
 --without-skill     obsolescence mode: skills not installed into the workspace
 --judge             enable the LLM style judge (off by default)
 --model M           model passed to claude CLI; default sonnet
@@ -161,6 +161,12 @@ per-case failure probabilities compound: at 99% each, an all-green run is
 roughly a coin flip. Retrying failures is what keeps the gate both strict and
 achievable.
 
+`--without-skill` never retries, and runs one trial per case whatever
+`--trials` or the case says: the obsolescence canary asks whether the bare
+model passes, not whether it can pass on its best attempt, and with the
+skills absent nearly every case fails, so retries or trials would multiply an
+already mostly-failing run by their count.
+
 A case that passes only on a retry is reported as `flaky` (in the JSON report
 and listed in the markdown summary). That is not a build failure, but it marks
 an assertion or prompt that is sensitive to nondeterminism and should be
@@ -169,6 +175,7 @@ tightened rather than left to the retry budget.
 Infra errors are not verdicts: a claude invocation that itself fails (no
 events, an error result, or nonzero exit with no result event; rate limits
 and auth failures look like this) is retried twice with backoff (15s, 45s)
-before the trial is recorded as failed with `reason: "infra_error"`. CI
+before the trial is recorded as failed with `reason: "infra_error"`. Under
+`--without-skill` there is no backoff either: one attempt, then the record. CI
 jobs that share the one CLAUDE_CODE_OAUTH_TOKEN must also be serialized,
 not run concurrently, or they exhaust its rate limit mid-run.

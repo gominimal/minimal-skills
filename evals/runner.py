@@ -73,7 +73,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help=(
             "extra attempts for a REGRESSION case that fails, to absorb model "
             "nondeterminism (default: 2). A case passes if any attempt passes; "
-            "0 disables. Only failures cost anything: a green suite never retries"
+            "0 disables. Only failures cost anything: a green suite never retries. "
+            "Ignored under --without-skill, which always runs one attempt "
+            "of one trial"
         ),
     )
     parser.add_argument(
@@ -431,12 +433,15 @@ def run_trial(
         # instead of grading it (observed: a shared-token rate limit turned
         # the tail of a nightly run into ~1s failures recorded as skill
         # regressions).
+        # --without-skill never retries, this loop included: one attempt,
+        # recorded as an infra error, is the whole budget there.
+        backoffs = (0,) if args.without_skill else (0, 15, 45)
         events: list[dict] = []
-        for attempt, backoff_s in enumerate((0, 15, 45)):
+        for attempt, backoff_s in enumerate(backoffs):
             if backoff_s:
                 print(
                     f"  infra error; retrying in {backoff_s}s "
-                    f"(attempt {attempt + 1}/3)",
+                    f"(attempt {attempt + 1}/{len(backoffs)})",
                     file=sys.stderr,
                 )
                 time.sleep(backoff_s)
@@ -550,11 +555,49 @@ def render_summary(case_reports: list[dict], totals: dict) -> str:
     return "\n".join(lines)
 
 
+def write_outputs(args: argparse.Namespace, case_reports: list[dict],
+                  partial: bool) -> tuple[list[dict], dict]:
+    """Write the JSON report and markdown summary for the cases so far."""
+    regression = [c for c in case_reports if c["suite"] == "regression"]
+    capability = [c for c in case_reports if c["suite"] == "capability"]
+    totals = {
+        "regression_pass_rate": pass_rate(regression),
+        "capability_pass_rate": pass_rate(capability),
+    }
+    if args.report:
+        report = {
+            "run": {
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "args": vars(args),
+                "partial": partial,
+            },
+            "cases": case_reports,
+            "totals": totals,
+        }
+        report_path = Path(args.report)
+        report_path.parent.mkdir(parents=True, exist_ok=True)
+        report_path.write_text(json.dumps(report, indent=2) + "\n")
+        if not partial:
+            print(f"report written to {report_path}", file=sys.stderr)
+    if args.summary:
+        summary_path = Path(args.summary)
+        summary_path.parent.mkdir(parents=True, exist_ok=True)
+        summary_path.write_text(render_summary(case_reports, totals))
+        if not partial:
+            print(f"summary written to {summary_path}", file=sys.stderr)
+    return regression, totals
+
+
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
 
     if args.lint_urls:
         return lint_urls()
+
+    # Obsolescence mode measures whether the bare model passes; a
+    # retry-until-pass loop measures whether it CAN pass, a different question.
+    if args.without_skill:
+        args.retries = 0
 
     if shutil.which("claude") is None:
         print("error: claude CLI not found on PATH", file=sys.stderr)
@@ -588,7 +631,9 @@ def main(argv: list[str] | None = None) -> int:
         case_id = case.get("id", "?")
         suite = case.get("suite", "regression")
         tier = case.get("tier", "text")
-        trials_n = case.get("trials") or args.trials
+        # One trial per case in obsolescence mode, whatever --trials or the
+        # case says: the budget must not depend on a workflow flag staying put.
+        trials_n = 1 if args.without_skill else (case.get("trials") or args.trials)
         print(
             f"[{case_id}] skill={skill} suite={suite} tier={tier} trials={trials_n}",
             file=sys.stderr,
@@ -641,33 +686,11 @@ def main(argv: list[str] | None = None) -> int:
             f"({n_pass}/{len(trials)} trials){note}",
             file=sys.stderr,
         )
+        # Rewrite the outputs after every case so a job timeout leaves the
+        # cases that did finish on disk instead of nothing.
+        write_outputs(args, case_reports, partial=True)
 
-    regression = [c for c in case_reports if c["suite"] == "regression"]
-    capability = [c for c in case_reports if c["suite"] == "capability"]
-    totals = {
-        "regression_pass_rate": pass_rate(regression),
-        "capability_pass_rate": pass_rate(capability),
-    }
-
-    if args.report:
-        report = {
-            "run": {
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-                "args": vars(args),
-            },
-            "cases": case_reports,
-            "totals": totals,
-        }
-        report_path = Path(args.report)
-        report_path.parent.mkdir(parents=True, exist_ok=True)
-        report_path.write_text(json.dumps(report, indent=2) + "\n")
-        print(f"report written to {report_path}", file=sys.stderr)
-
-    if args.summary:
-        summary_path = Path(args.summary)
-        summary_path.parent.mkdir(parents=True, exist_ok=True)
-        summary_path.write_text(render_summary(case_reports, totals))
-        print(f"summary written to {summary_path}", file=sys.stderr)
+    regression, _ = write_outputs(args, case_reports, partial=False)
 
     regression_failed = [c for c in regression if not c["passed"]]
     if regression_failed:
