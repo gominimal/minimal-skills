@@ -350,5 +350,39 @@
       { "name": "response_matches", "args": { "pattern": "min ls|warm|daemon first|one .{0,25}command first" } }
     ],
     "functional_asserts": []
+  },
+  {
+    "id": "setup-021",
+    "prompt": "I have a long-lived minimal session called api. I want to run my deploy task in it and the task needs DEPLOY_TOKEN from my shell. Is `min session run api deploy` the right call?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      { "name": "response_matches", "args": { "pattern": "min task run" } },
+      { "name": "response_matches", "args": { "pattern": "daemon'?s?\\s+(environment|env\\b)|environment variable not found|(resolve|look|read|inherit)\\w*\\s.{0,40}daemon" } },
+      { "name": "response_matches", "args": { "pattern": "on the client|client.side|task sandbox|from (your|the|my) shell|ephemeral" } },
+      "docs_urls_valid"
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "setup-022",
+    "prompt": "What is the difference between `min task run` and `min session exec` in minimal, and when should I reach for each?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "capability",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      { "name": "response_matches", "args": { "pattern": "min session exec" } },
+      { "name": "response_matches", "args": { "pattern": "min task run" } },
+      { "name": "response_matches", "args": { "pattern": "ad.hoc|one.off|one.shot" } },
+      { "name": "response_matches", "args": { "pattern": "repeat|more than once|recurring|declared|committed" } },
+      { "name": "response_matches", "args": { "pattern": "existing session|session you already have|already (have|running|active|exists)|running session|live session" } },
+      "docs_urls_valid"
+    ],
+    "functional_asserts": []
   }
 ]

@@ -277,5 +277,21 @@
       { "name": "response_not_matches", "args": { "pattern": "no equivalent on linux|not available on linux|unavailable on linux" } }
     ],
     "functional_asserts": []
+  },
+  {
+    "id": "net-021",
+    "prompt": "minimald warned at startup that it couldn't publish port 7654 because the address was in use. I killed the process that had it. Session hostnames still don't resolve. What now?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      { "name": "response_matches", "args": { "pattern": "min stop" } },
+      { "name": "response_matches", "args": { "pattern": "(does\\s+not|doesn'?t|won'?t|will\\s+not|never)\\s+retr(y|ies)" } },
+      { "name": "response_matches", "args": { "pattern": "respawn|restart|next .{0,30}min|min ls|start(s|ed)? (it|the daemon|a new daemon|again)" } },
+      "docs_urls_valid"
+    ],
+    "functional_asserts": []
   }
 ]

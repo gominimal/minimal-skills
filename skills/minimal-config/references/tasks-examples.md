@@ -39,10 +39,15 @@ echo = "Docs live at https://minimal.dev/docs/reference/minimal-dot-toml"
 [tasks.integration]
 packages = ["postgresql-client"]         # Only this task gets psql.
 env_vars.RAILS_ENV = "test"              # Fixed value.
-env_vars.TEST_SHARD = { inherit = true }  # From the shell that runs the task,
-                                         # and gated: allow-list the name
-                                         # under [vars] in user_policy.toml
-                                         # first. See the user-policy page.
+env_vars.TEST_SHARD = { inherit = true }  # From the shell that runs
+                                         # `min task run`, and gated:
+                                         # allow-list the name under [vars]
+                                         # in user_policy.toml first. See the
+                                         # user-policy page. `min session run`
+                                         # resolves the same declaration in
+                                         # the DAEMON's environment instead,
+                                         # so it cannot carry a client-shell
+                                         # value; see minimal-setup.
 patches.dir."~/.cache/test-fixtures" = "read-only"   # Host dir, read-only.
 patches.file."~/.config/myapp/test.toml" = "read-only"  # Single host file.
 state_key = "integration"                # Cache state across runs.

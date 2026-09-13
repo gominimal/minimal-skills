@@ -84,6 +84,11 @@ use minimal-networking.
 - `min session hooks <SESSION>` lists the activation hooks the session
   composed, attributed to the project or loadout each came from.
 - `min session rename <SESSION> <NEW_NAME>` renames a session.
+- `min session exec <SESSION> <COMMAND>...` runs a one-off command in an
+  existing session, non-interactively, with the session's packages on PATH.
+- `min session run <SESSION> <TASK>` runs a task declared in the session
+  project's `minimal.toml` inside that session. It is not the in-session
+  equivalent of `min task run` — see the env-composition trap below.
 - `min session destroy <SESSION>` removes one session;
   `min session destroy --all` removes every session (`-f` skips confirmation).
 - `min stop` shuts down the daemon. Sessions survive it and are re-hosted by
@@ -119,10 +124,18 @@ https://minimal.dev/docs/reference/sandbox-operations
   [hooks]
   allow = ["/abs/path/to/project"]
   ```
-- Run non-interactive work as a declared task, `min task run <TASK>`, rather
-  than an ad-hoc command: a task is committed, reviewable, and carries its
-  own packages, env, and policy. The minimal-config skill owns the schema:
+- Tasks for repeatable work, `exec` for ad hoc. Anything that runs more than
+  once — CI steps, agent wrappers, test lanes — belongs in a declared task,
+  run with `min task run <TASK>`: it is committed, reviewable, and carries
+  its own packages, env, and policy. The minimal-config skill owns the schema:
   https://minimal.dev/docs/reference/tasks
+- For one-off work against a session you already have, `min session exec
+  <SESSION> <COMMAND>...` is the right lane. It composes the session's
+  packages onto PATH, its output is complete from the first line, argv is
+  passed through without re-quoting, and a backgrounded child that inherits
+  its stdout does not hold the call open (all three reproduced on released
+  0.5.4; `sh -c 'sleep 8 & echo started'` returns in under a second). Do not
+  build a repeatable pipeline on it; do not avoid it for a single command.
 - Do not fan out concurrent `min` commands from a cold state. With no daemon
   running each client races to autospawn one, and the losers fail with
   `Failed to ensure the minimald daemon is running: ... the detached
@@ -132,8 +145,19 @@ https://minimal.dev/docs/reference/sandbox-operations
 - Read session state with `min session list --json` (or `--raw` for bare ids
   one per line). Never parse the human-readable table.
 - `min session attach` opens an interactive shell and takes no command
-  argument; scripted work belongs in a task. Confirm any flag against
-  `min session --help` before scripting it.
+  argument; use `min session exec` for a one-off command and a task for
+  anything repeatable. Confirm any flag against `min session --help` before
+  scripting it.
+- `min session run <SESSION> <TASK>` does not compose the session's
+  environment, and its help text reads as if it does. A task it runs sees
+  neither `[session.vars]` nor the session's PATH additions, and an
+  `env_vars.X = { inherit = true }` declaration resolves in the DAEMON's
+  environment, failing with `inheriting environment variable 'X':
+  environment variable not found` even when `X` is exported in the shell that
+  typed the command. `min task run` resolves the same declaration on the
+  client and works. Until this is fixed, carry secrets with `min task run`
+  (task sandbox) or `[session.vars]` at activation — never
+  `min session run`.
 - Commits made in a session's workspace come back to the host checkout with
   `git push min://<session>`, run from inside the session.
 
