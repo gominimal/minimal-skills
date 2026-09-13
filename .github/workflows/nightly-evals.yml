@@ -139,7 +139,7 @@ jobs:
     # One trial per case, and the runner never retries in --without-skill
     # mode, neither the failed-case retry nor the infra-error backoff, so the
     # tier is at most one claude call per case (91 as of 2026-09-12). At the
-    # usual ~20s a call that is about 30 minutes; 90 covers a 60s-a-call day.
+    # usual ~20s a call that is about 30 minutes; 90 covers a 55s-a-call day.
     # Before this the job reached 41 of 91 cases and was cancelled with no
     # report on 22 of the 25 nights to 2026-09-11. The runner now rewrites
     # the report after every case, so a timeout still uploads what finished.
