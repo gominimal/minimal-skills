@@ -90,6 +90,8 @@ min session activate --attach
 ```
 """
 
+README_DIGIT_HEADING = README_PARITY.replace("Start in three commands", "Start in 3 commands")
+
 README_TWO_HEADING = """\
 Intro text.
 
@@ -194,6 +196,10 @@ class MainTests(unittest.TestCase):
         code, out, _ = self._run_main(README_NIGHTLY)
         self.assertEqual(code, 1)
         self.assertIn("command 1", out)
+
+    def test_heading_with_digit_is_parity(self):
+        code, _, _ = self._run_main(README_DIGIT_HEADING)
+        self.assertEqual(code, 0)
 
     def test_heading_says_two_exits_one(self):
         code, out, _ = self._run_main(README_TWO_HEADING)

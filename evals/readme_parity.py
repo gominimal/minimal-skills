@@ -23,7 +23,10 @@ TIMEOUT_S = 30
 DEFAULT_README_URL = (
     "https://raw.githubusercontent.com/gominimal/minimal/main/README.md"
 )
-DEFAULT_SKILL_PATH = "skills/minimal-setup/SKILL.md"
+# Anchored to the repository, not the caller's working directory, so the
+# check behaves the same from `evals/`, the repo root, or CI.
+REPO_ROOT = Path(__file__).resolve().parent.parent
+DEFAULT_SKILL_PATH = str(REPO_ROOT / "skills" / "minimal-setup" / "SKILL.md")
 # This check's whole claim is "the README on gominimal/minimal main still
 # lists these commands". Fetching (or following a redirect to) anything else
 # would compare the skill against a document it never actually read.
@@ -200,9 +203,9 @@ def main(argv: list[str] | None = None) -> int:
 
     heading = _HEADING_RE.search(readme_text).group(1)  # readme_commands proved this matches
     diffs = compare(readme_cmds, skill_cmds)
-    if "three" not in heading.lower():
+    if not re.search(r"\b(three|3)\b", heading.lower()):
         diffs.append(
-            f"README heading says {heading!r}, but should state 'three'"
+            f"README heading says {heading!r}, but should state 'three' (or '3')"
         )
     if len(readme_cmds) != 3:
         diffs.append(
