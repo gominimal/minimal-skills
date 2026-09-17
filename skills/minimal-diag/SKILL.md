@@ -1,6 +1,6 @@
 ---
 name: minimal-diag
-description: Use when Minimal itself is broken or misbehaving and the user wants to report a bug or collect diagnostics, e.g. Minimal is broken, a min session won't start, the minimald daemon is unreachable, or a VM boot hangs, and the user mentions Minimal. Do not use for general debugging of the user's own application or for bug reports about non-Minimal software.
+description: Use when Minimal itself is broken or misbehaving and the user wants to report a bug or collect diagnostics, e.g. Minimal is broken, a min session won't start, the minimald daemon is unreachable, or a VM boot hangs, and the user mentions Minimal. Do not use for session hostnames or port 7654 not routing (minimal-networking), for general debugging of the user's own application, or for bug reports about non-Minimal software.
 ---
 
 # minimal-diag
@@ -53,3 +53,6 @@ team. Full command reference: https://minimal.dev/docs/reference/cli-min
 
 Do not root-cause the failure from this skill; it only collects diagnostics.
 For deeper setup and session troubleshooting, use the minimal-setup skill.
+Session hostnames not resolving, or minimald warning that it could not
+publish port 7654, is a known networking sharp edge with a documented
+recovery: use the minimal-networking skill.

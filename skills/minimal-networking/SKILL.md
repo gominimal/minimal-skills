@@ -1,6 +1,6 @@
 ---
 name: minimal-networking
-description: Experimental and subject to change. Use when previewing a dev server running inside a Minimal session, exposing or viewing a port from a Minimal sandbox, wiring session-to-session networking, reaching the host from inside a session, or getting a Minimal preview URL. Do not use for general nginx, proxy, or networking questions unrelated to Minimal, production ingress, or Docker networking.
+description: Experimental and subject to change. Use when previewing a dev server running inside a Minimal session, exposing or viewing a port from a Minimal sandbox, wiring session-to-session networking, reaching the host from inside a session, getting a Minimal preview URL, or when session hostnames stop resolving or minimald warns it could not publish port 7654. Do not use for general nginx, proxy, or networking questions unrelated to Minimal, production ingress, or Docker networking.
 ---
 
 # Minimal session networking (experimental)
