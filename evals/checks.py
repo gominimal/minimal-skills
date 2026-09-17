@@ -146,11 +146,19 @@ def uses_min_init(args: dict, result: Result) -> bool:
 
 
 def activate_no_prompt(args: dict, result: Result) -> bool:
-    """Every `min session activate` in a code block or inline command carries
-    --no-prompt on the same command line. Prose mentions outside command
-    context are not held to it."""
-    for line in _command_lines(result.response_text):
-        if _ACTIVATE_RE.search(line) and "--no-prompt" not in line:
+    """Every `min session activate` in a fenced code block carries --no-prompt
+    on the same command line. An inline-backtick mention is judged by the
+    prose line around it, so "pass `--no-prompt` to `min session activate`"
+    (the skill's own wording) passes while a bare `min session activate
+    --attach` recipe with no --no-prompt on its line fails."""
+    text = result.response_text
+    for match in _FENCE_RE.finditer(text):
+        for line in match.group(1).splitlines():
+            if _ACTIVATE_RE.search(line) and "--no-prompt" not in line:
+                return False
+    for line in _FENCE_RE.sub("", text).splitlines():
+        spans = _INLINE_CODE_RE.findall(line)
+        if any(_ACTIVATE_RE.search(s) for s in spans) and "--no-prompt" not in line:
             return False
     return True
 
