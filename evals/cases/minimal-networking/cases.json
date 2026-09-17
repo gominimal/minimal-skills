@@ -288,7 +288,7 @@
     "allowed_tools": ["Skill"],
     "expected_checks": [
       { "name": "response_matches", "args": { "pattern": "min stop" } },
-      { "name": "response_matches", "args": { "pattern": "\\b(does\\s+not|doesn'?t|won'?t|will\\s+not|never)\\s+(\\S+\\s+){0,5}?(retr(y|ies)|re-?bind|re-?publish|re-?attempt)" } },
+      { "name": "response_matches", "args": { "pattern": "\\b(does\\s+not|doesn'?t|won'?t|will\\s+not|never)\\s+(make\\s+(the|an?)\\s+(\\S+\\s+)?daemon\\s+)?(retr(y|ies)|re-?b(i|ou)nd|re-?publish|re-?attempt)" } },
       { "name": "response_matches", "args": { "pattern": "respawn|restart|next .{0,30}min|min ls|start(s|ed)? (it|the daemon|a new daemon|again)" } },
       "docs_urls_valid"
     ],

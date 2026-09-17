@@ -101,7 +101,7 @@ Named (no args):
 | `docs_urls_valid` | every `https://minimal.dev/...` URL in the response returns HTTP 200 |
 | `cites_docs_url` | response cites at least one `minimal.dev/start/` or `minimal.dev/docs/` URL |
 | `uses_min_init` | response recommends or runs `min init` |
-| `activate_no_prompt` | every scripted/non-interactive `min session activate` in the response carries `--no-prompt` |
+| `activate_no_prompt` | every `min session activate` line in a fenced code block carries `--no-prompt`; an inline-backtick mention passes when `--no-prompt` appears on the same prose line (so "pass `--no-prompt` to `min session activate`" passes). Prose outside backticks is not held to it |
 | `pins_upstream` | any emitted `minimal.toml` has an `[upstream]` with `locked_commit` |
 | `mip_check_suggested` | response suggests `mip check` (or in-session `min check`, the macOS path) to validate config |
 | `min_bug_suggested` | response suggests `min bug` for diagnostics |
