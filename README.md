@@ -63,6 +63,7 @@ Needs the `claude` CLI on PATH, authenticated (locally via `claude` login; CI pa
 
 ```
 just lint-urls        # liveness-check every docs URL in the skills
+just lint-parity      # assert the minimal README's three-command block matches minimal-setup
 just eval             # text tier, all skills, 1 trial
 just eval-skill minimal-setup   # text tier, one skill
 just triggers         # fast trigger-accuracy pass

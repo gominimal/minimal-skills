@@ -28,6 +28,8 @@ jobs:
       - uses: astral-sh/setup-uv@v5
       - name: Lint skill docs URLs
         run: uv run --project evals evals/runner.py --lint-urls
+      - name: Check README/minimal-setup command parity
+        run: uv run --project evals evals/runner.py --lint-readme-parity
 
   text-evals:
     # Text tier, 1 trial per case (the runner's PR default). Exit code is
