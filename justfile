@@ -22,6 +22,10 @@ triggers:
 lint-urls:
     uv run --project evals evals/runner.py --lint-urls
 
+# Assert the minimal README's three-command block matches minimal-setup (no LLM, no key).
+lint-parity:
+    uv run --project evals evals/runner.py --lint-readme-parity
+
 # Functional-tier evals; needs a local Minimal install (`min` on PATH).
 functional:
     uv run --project evals evals/runner.py --tier functional --trials 1 --report evals/reports/functional-local.json

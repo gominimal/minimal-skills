@@ -132,6 +132,7 @@ it to this table in the same change that implements it in `checks.py`.
 --report PATH       write the JSON report
 --summary PATH      write a markdown summary (CI appends to $GITHUB_STEP_SUMMARY)
 --lint-urls         no-LLM mode: every minimal.dev URL in skills/*/SKILL.md must return 200; exits nonzero on any failure
+--lint-readme-parity  no-LLM mode: gominimal/minimal README's three-command block must match minimal-setup; exits nonzero on drift
 ```
 
 Mechanics: per trial, fresh temp workspace; unless `--without-skill`, every

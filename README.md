@@ -59,10 +59,11 @@ Failures of blocking nightly jobs open or update a single tracking issue.
 ## Dev loop
 
 Needs the `claude` CLI on PATH, authenticated (locally via `claude` login; CI passes a `CLAUDE_CODE_OAUTH_TOKEN` secret generated with `claude setup-token`)
-(`npm install -g @anthropic-ai/claude-code`); `lint-urls` needs neither.
+(`npm install -g @anthropic-ai/claude-code`); `lint-urls` and `lint-parity` need neither.
 
 ```
 just lint-urls        # liveness-check every docs URL in the skills
+just lint-parity      # assert the minimal README's three-command block matches minimal-setup
 just eval             # text tier, all skills, 1 trial
 just eval-skill minimal-setup   # text tier, one skill
 just triggers         # fast trigger-accuracy pass

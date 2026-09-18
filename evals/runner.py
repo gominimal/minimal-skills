@@ -25,6 +25,7 @@ SKILLS_DIR = REPO_ROOT / "skills"
 sys.path.insert(0, str(EVALS_DIR))
 
 import checks as checks_mod  # noqa: E402
+import readme_parity  # noqa: E402
 
 DEFAULT_ALLOWED_TOOLS = {
     "text": ["Skill"],
@@ -102,6 +103,13 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--lint-urls", action="store_true",
         help="no-LLM mode: check every minimal.dev URL in skills/ returns 200",
+    )
+    parser.add_argument(
+        "--lint-readme-parity", action="store_true",
+        help=(
+            "no-LLM mode: the gominimal/minimal README's three-command block "
+            "must match the minimal-setup skill"
+        ),
     )
     return parser.parse_args(argv)
 
@@ -593,6 +601,9 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.lint_urls:
         return lint_urls()
+
+    if args.lint_readme_parity:
+        return readme_parity.main([])
 
     # Obsolescence mode measures whether the bare model passes; a
     # retry-until-pass loop measures whether it CAN pass, a different question.
