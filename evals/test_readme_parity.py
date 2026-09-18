@@ -201,6 +201,12 @@ class MainTests(unittest.TestCase):
         code, _, _ = self._run_main(README_DIGIT_HEADING)
         self.assertEqual(code, 0)
 
+    def test_skill_prose_order_does_not_matter(self):
+        reordered = SKILL_TEXT.replace("min init", "MIN_INIT_TMP").replace(
+            "min session activate --attach", "min init"
+        ).replace("MIN_INIT_TMP", "min session activate --attach")
+        self.assertEqual(readme_parity.skill_commands(reordered), readme_parity.skill_commands(SKILL_TEXT))
+
     def test_heading_says_two_exits_one(self):
         code, out, _ = self._run_main(README_TWO_HEADING)
         self.assertEqual(code, 1)

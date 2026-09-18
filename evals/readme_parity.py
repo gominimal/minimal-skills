@@ -108,7 +108,10 @@ def skill_commands(text: str) -> list[str]:
             "the '## Onboard a project' section is missing backticked "
             "command(s): " + ", ".join(repr(m) for m in missing)
         )
-    return [installer, *found]
+    # The skill's numbered steps fix the order (init, then activate); the
+    # prose may mention them in any order, so emit them in _ONBOARD_VERBS
+    # order rather than in order of first appearance.
+    return [installer, *[verb for verb in _ONBOARD_VERBS if verb in found]]
 
 
 def compare(readme: list[str], skill: list[str]) -> list[str]:
@@ -209,7 +212,7 @@ def main(argv: list[str] | None = None) -> int:
         )
     if len(readme_cmds) != 3:
         diffs.append(
-            f"README block lists {len(readme_cmds)} command(s), heading states three"
+            f"README block lists {len(readme_cmds)} command(s); the skill runs three"
         )
 
     if diffs:
