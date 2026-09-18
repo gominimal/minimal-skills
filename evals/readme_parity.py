@@ -120,7 +120,18 @@ def compare(readme: list[str], skill: list[str]) -> list[str]:
     for i in range(max(len(readme), len(skill))):
         r = readme[i] if i < len(readme) else None
         s = skill[i] if i < len(skill) else None
-        if r != s:
+        if r == s:
+            continue
+        if s is None:
+            diffs.append(
+                f"command {i + 1}: README has {r!r}, which is not one of the "
+                "three commands the minimal-setup skill's install and onboarding steps run"
+            )
+        elif r is None:
+            diffs.append(
+                f"command {i + 1}: minimal-setup skill runs {s!r}, missing from the README block"
+            )
+        else:
             diffs.append(
                 f"command {i + 1}: README has {r!r}, minimal-setup skill has {s!r}"
             )
