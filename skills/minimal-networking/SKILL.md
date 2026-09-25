@@ -12,8 +12,10 @@ re-verified on 2026-08-26 against min 0.5.4-dev.23.g5e4c5ae1 (Linux aarch64);
 and the proxy port, the session-hostname route and the 502 shape were
 re-checked on 2026-09-03 against min 0.5.4-dev.62.g30a3031d (macOS arm64);
 and the bind each preview route needs was checked on 2026-09-25 against
-min 0.5.5-dev.15.gc6cc5fe5 (macOS arm64). None of it is a stable contract. For general `min` CLI context see
-https://minimal.dev/docs/reference/cli-min (the only relevant public page).
+min 0.5.5-dev.15.gc6cc5fe5 (macOS arm64), then re-checked the same day
+against min 0.6.0 (macOS arm64), which also showed that the proxy route does
+not reach own-ip sessions. None of it is a stable contract. For general
+`min` CLI context see https://minimal.dev/docs/reference/cli-min (the only relevant public page).
 Do not cite or invent any other minimal.dev URL for networking topics; none
 exists.
 
@@ -34,8 +36,9 @@ play; see minimal-setup for the flag itself.
    ```
 
 2. Inside the session, start the dev server normally. The default localhost
-   bind is fine for this proxy route, in host-net and own-ip sessions alike;
-   nothing needs to be declared up front.
+   bind is fine for this proxy route in a default `host-net` session; nothing
+   needs to be declared up front. The proxy route does not reach an own-ip
+   session; preview one through `--ingress` (see own-ip mode below).
 
    ```bash
    npm run dev
@@ -72,16 +75,17 @@ play; see minimal-setup for the flag itself.
    `http://127.0.0.1:<port>` directly on the host unless the session is a
    Linux `host-net` session on the default `local-minimald` provider, where
    session and host share one loopback, or the port was published with
-   `--ingress` at activation and the server binds all addresses (below). Every macOS session has its own
-   namespace, so without `--ingress` a bare `127.0.0.1:<port>` on the host
-   does not reach it.
+   `--ingress` at activation and the server binds all addresses (below).
+   Every macOS session has its own namespace, so without `--ingress` a bare
+   `127.0.0.1:<port>` on the host does not reach it.
 
 ## Hostname rule
 
 Every active session registers `<name>.local.min.internal`. `<name>` is the
 session name if set, otherwise the project directory basename, lowercased.
 `min session rename <id> <name>` re-registers the hostname live. The port in
-the URL selects the port inside the session.
+the URL selects the port inside the session, except for an own-ip session,
+whose hostname does not route into it (see own-ip mode below).
 
 ## WebSockets and HMR
 
@@ -169,11 +173,21 @@ Astro and Vite, `--host`). One on the default localhost bind is not reached
 through `--ingress`: the host's connection is reset. Verified on the
 2026-09-25 check: in one own-ip session, a `127.0.0.1:4321` listener reset
 the host's `curl` through `--ingress 18431:4321`, a `0.0.0.0:4322` listener
-answered through `--ingress 18432:4322`, and the proxy route reached both.
+answered through `--ingress 18432:4322`. Same result on 0.6.0.
 
-These flags take effect at activation, so this is an alternative to offer
-after the proxy route, not a replacement for it when the dev server is
-already running.
+The proxy route does not reach an own-ip session. Its
+`<name>.local.min.internal` hostname is answered from the shared `host-net`
+namespace instead: a `502` when nothing there listens on that port, or some
+other session's server when one does. Verified on 0.6.0 with a different
+response body in each session: through the proxy, the own-ip session's
+hostname returned the `host-net` session's body on both ports and kept
+returning `502` for 13 minutes while no `host-net` session listened, while
+`--ingress` returned the own-ip session's own body. Do not offer the proxy
+route for an own-ip session.
+
+These flags take effect at activation. For a default `host-net` session
+whose dev server is already running, offer the proxy route first; for an
+own-ip session, `--ingress` is the only host route.
 
 | Option | Effect |
 |---|---|
