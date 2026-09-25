@@ -68,10 +68,11 @@ play; see minimal-setup for the flag itself.
    This proxy route is the answer for a dev server that is already running:
    it needs no reactivation. Do not tell the user to open
    `http://127.0.0.1:<port>` directly on the host unless the session is a
-   Linux `host-net` session on the default `local-minimald` provider, the only
-   case where session and host share one loopback. Every macOS session has
-   its own namespace, so a bare `127.0.0.1:<port>` on the host does not reach
-   it.
+   Linux `host-net` session on the default `local-minimald` provider, where
+   session and host share one loopback, or the port was published with
+   `--ingress` at activation (below). Every macOS session has its own
+   namespace, so without `--ingress` a bare `127.0.0.1:<port>` on the host
+   does not reach it.
 
 ## Hostname rule
 
