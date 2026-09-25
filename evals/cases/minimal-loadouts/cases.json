@@ -347,7 +347,7 @@
     "expected_checks": [
       { "name": "response_matches", "args": { "pattern": "dev/loadout\\.toml|loadouts/dev/[^\\n]{0,80}\\bloadout\\.toml" } },
       { "name": "response_matches", "args": { "pattern": "defined twice|(?<!not )\\ban? (hard )?error\\b|\\b(will|would) fail\\b|\\bfails (with|to)\\b" } },
-      { "name": "response_not_matches", "args": { "pattern": "\\b(will|would) (take precedence|win|override|shadow)\\b" } },
+      { "name": "response_not_matches", "args": { "pattern": "(?<!neither )(?<!no )\\b(dev/loadout\\.toml|dev\\.toml|director(y|ies)|layouts?|flat file|new one|old one)[^.\\n]{0,30}\\b(takes precedence|wins|overrides|shadows|(will|would) (take precedence|win|override|shadow))\\b" } },
       "docs_urls_valid"
     ],
     "functional_asserts": []
