@@ -71,8 +71,10 @@ Directives that prevent the common failures:
   expanded path must be absolute, globs need a literal directory prefix
   (`~/dotfiles/**/*.lua` works, bare `**/*.lua` is rejected), and `..` is
   rejected everywhere. `dest` is relative to the session home; for glob
-  sources it is a directory. A missing source is dropped with a warning,
-  so opportunistic dotfile patches are safe.
+  sources it is a directory. A plain directory source (`source =
+  "~/dotfiles/nvim"`) copies the directory's contents, recursively, into
+  `dest` (before 0.6.0 it silently copied nothing). A missing source is
+  dropped with a warning, so opportunistic dotfile patches are safe.
 - `packages` names are not checked at activation; an unknown package fails
   later at session spawn with `no such package`.
 - `[[lifecycle_hooks]]` DO execute. Each script is a table
