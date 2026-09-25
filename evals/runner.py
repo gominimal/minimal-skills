@@ -479,9 +479,10 @@ def run_trial(
         if args.skip_permissions:
             command.append("--dangerously-skip-permissions")
         # A CLI-level failure (nonzero exit with no result event, or an
-        # error result that is not a case outcome) is INFRA noise: rate limits, auth, transient API
-        # errors. It says nothing about the skill, so retry with backoff
-        # instead of grading it (observed: a shared-token rate limit turned
+        # error result that is not a case outcome) is INFRA noise: rate
+        # limits, auth, transient API errors. It says nothing about the
+        # skill, so retry with backoff instead of grading it (observed: a
+        # shared-token rate limit turned
         # the tail of a nightly run into ~1s failures recorded as skill
         # regressions).
         # --without-skill never retries, this loop included: one attempt,
