@@ -18,16 +18,16 @@ https://minimal.dev/docs/reference/loadouts
   `<config>/minimal/loadouts/<name>/loadout.toml`
   (`~/.config/minimal/loadouts/` on both Linux and macOS). The second layout
   keeps the loadout, its hook scripts, and its files in one directory you
-  can clone from git. The directory is not created automatically.
-- Defining one name in BOTH layouts is an error, not a precedence rule:
-  `min loadout list` and any activation selecting it fail with `is defined
-  twice`, naming both paths. Delete one of the two files.
-- The filename IS the loadout's name (the directory name for
-  `<name>/loadout.toml`). A `name` field inside the file is
+  can clone from git, and the directory name is the loadout's name. The
+  directory is not created automatically.
+- The filename IS the loadout's name. A `name` field inside the file is
   deprecated: matching the filename warns that the field can be deleted, and
   differing from it warns and is ignored — the filename wins either way.
   There is no longer a `NameMismatch` failure. Do not write `name` into a new
   loadout, and delete it from an existing one.
+- Defining one name in BOTH layouts is an error, not a precedence rule:
+  `min loadout list` and any activation selecting it fail with `is defined
+  twice`, naming both paths. Delete one of the two files.
 - Apply with `min session activate --loadout NAME` (repeatable). Set
   `[loadouts] default_loadouts = ["NAME"]` in `<config>/minimal/config.toml`
   to apply automatically; any explicit `--loadout` overrides the defaults,

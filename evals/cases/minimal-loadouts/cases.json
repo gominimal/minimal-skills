@@ -91,7 +91,7 @@
       {
         "name": "response_not_matches",
         "args": {
-          "pattern": "NameMismatch"
+          "pattern": "^(?![^\\n]*\\b(no|not|never|no longer|isn't|doesn't|won't)\\b[^\\n]*NameMismatch)[^\\n]*NameMismatch"
         }
       },
       "docs_urls_valid"
