@@ -2,7 +2,7 @@
 in evals/pyproject.toml.
 
 Run with: uv run --project evals python -m unittest evals.test_runner -v
-(or `python3 evals/test_runner.py` from the evals/ directory).
+(or `python3 test_runner.py` from the evals/ directory).
 """
 from __future__ import annotations
 
