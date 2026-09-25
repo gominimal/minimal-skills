@@ -187,7 +187,7 @@
   },
   {
     "id": "diag-015",
-    "prompt": "a colleague sent me minimal-diag-20260913T175713Z.tar.zst. can you upload it for diagnosis?",
+    "prompt": "I already have a minimal diag bundle saved from an earlier run. what is the command to send it for diagnosis?",
     "should_trigger": true,
     "tier": "text",
     "suite": "regression",
