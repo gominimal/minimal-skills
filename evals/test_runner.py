@@ -83,11 +83,22 @@ class ResultClassificationTest(unittest.TestCase):
             return subprocess.CompletedProcess(command, 1, MAX_TURNS_EVENT, "")
 
         with mock.patch.object(runner.subprocess, "run", side_effect=fake_run), \
-                mock.patch.object(runner.time, "sleep") as sleep:
+                mock.patch.object(runner.time, "sleep") as sleep, \
+                mock.patch.object(
+                    runner, "run_checks", return_value=({"fixture": True}, True)
+                ) as run_checks, \
+                mock.patch.object(
+                    runner, "run_asserts",
+                    return_value=([{"command": "fixture", "ok": True}], True),
+                ) as run_asserts:
             record = runner.run_trial("minimal-config", CASE, _args(), known=[])
 
         self.assertEqual(len(calls), 1)
         sleep.assert_not_called()
+        run_checks.assert_called_once()
+        run_asserts.assert_called_once()
+        self.assertEqual(record["checks"], {"fixture": True})
+        self.assertEqual(record["asserts"], [{"command": "fixture", "ok": True}])
         self.assertEqual(record.get("reason"), "max_turns")
         self.assertNotIn("infra_errors", record)
         self.assertFalse(record["passed"])
