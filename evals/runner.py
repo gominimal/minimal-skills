@@ -482,9 +482,8 @@ def run_trial(
         # error result that is not a case outcome) is INFRA noise: rate
         # limits, auth, transient API errors. It says nothing about the
         # skill, so retry with backoff instead of grading it (observed: a
-        # shared-token rate limit turned
-        # the tail of a nightly run into ~1s failures recorded as skill
-        # regressions).
+        # shared-token rate limit turned the tail of a nightly run into ~1s
+        # failures recorded as skill regressions).
         # --without-skill never retries, this loop included: one attempt,
         # recorded as an infra error, is the whole budget there.
         backoffs = (0,) if args.without_skill else (0, 15, 45)
