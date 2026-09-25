@@ -83,9 +83,14 @@ play; see minimal-setup for the flag itself.
 
 Every active session registers `<name>.local.min.internal`. `<name>` is the
 session name if set, otherwise the project directory basename, lowercased.
-`min session rename <id> <name>` re-registers the hostname live. The port in
-the URL selects the port inside the session, except for an own-ip session,
-whose hostname does not route into it (see own-ip mode below).
+`min session rename <id> <name>` re-registers the hostname live. The
+hostname only gates the request: it must name an active session. The port in
+the URL is then looked up in the shared `host-net` namespace, not inside the
+named session. For a default session that is where its server listens, so
+the URL works. It also means the hostname does not isolate sessions:
+`<any-session>.local.min.internal:<port>` reaches whichever `host-net`
+session listens on that port, and never an own-ip session (see own-ip mode
+below).
 
 ## WebSockets and HMR
 
@@ -184,15 +189,21 @@ through `--ingress`: the host's connection is reset. Verified on the
 the host's `curl` through `--ingress 18431:4321`, a `0.0.0.0:4322` listener
 answered through `--ingress 18432:4322`. Same result on 0.6.0.
 
-The proxy route does not reach an own-ip session. Its
-`<name>.local.min.internal` hostname is answered from the shared `host-net`
-namespace instead: a `502` when nothing there listens on that port, or some
-other session's server when one does. Verified on 0.6.0 with a different
-response body in each session: through the proxy, the own-ip session's
-hostname returned the `host-net` session's body on both ports and kept
-returning `502` for 13 minutes while no `host-net` session listened, while
-`--ingress` returned the own-ip session's own body. Do not offer the proxy
-route for an own-ip session.
+The proxy route does not reach an own-ip session. The port in its
+`<name>.local.min.internal` URL is looked up in the shared `host-net`
+namespace (see Hostname rule): the result is a `502` when nothing there
+listens on that port, or some other session's server when one does. On macOS
+this holds even at the session's `--ingress` external port. Verified on 0.6.0
+(macOS arm64) with a different response body in each session:
+- Through the proxy, the own-ip session's hostname returned the `host-net`
+  session's body on both ports.
+- It kept returning `502` for 13 minutes while no `host-net` session
+  listened.
+- `<name>.local.min.internal:18432` returned `502` while `127.0.0.1:18432`
+  directly returned the own-ip session's own body.
+
+For an own-ip session, use `--ingress` with an all-addresses bind and browse
+`127.0.0.1:<EXT>` directly; do not offer the proxy route.
 
 These flags take effect at activation. For a default `host-net` session
 whose dev server is already running, offer the proxy route first; for an
