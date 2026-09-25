@@ -253,7 +253,7 @@
       {
         "name": "response_matches",
         "args": {
-          "pattern": "\\*\\*/\\*\\.lua|glob"
+          "pattern": "\\*\\*/\\*\\.lua|glob|source\\s*=\\s*\"~/dotfiles/nvim/?\""
         }
       },
       "docs_urls_valid"
