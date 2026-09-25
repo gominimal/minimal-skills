@@ -311,6 +311,16 @@ def install_skills(workspace: Path) -> None:
             shutil.copytree(child, dest_root / child.name)
 
 
+def seed_workspace(workspace: Path, case: dict, args: argparse.Namespace) -> None:
+    if not args.without_skill:
+        install_skills(workspace)
+    # Seed declared project files so "this project" prompts are coherent.
+    for rel_path, content in (case.get("workspace_files") or {}).items():
+        target = workspace / rel_path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(content)
+
+
 def run_checks(case: dict, result: checks_mod.Result) -> tuple[dict[str, bool], bool]:
     outcomes: dict[str, bool] = {}
     all_ok = True
@@ -408,13 +418,6 @@ def run_trial(
     }
     start = time.monotonic()
     try:
-        if not args.without_skill:
-            install_skills(workspace)
-        # Seed declared project files so "this project" prompts are coherent.
-        for rel_path, content in (case.get("workspace_files") or {}).items():
-            target = workspace / rel_path
-            target.parent.mkdir(parents=True, exist_ok=True)
-            target.write_text(content)
         command = [
             "claude", "-p", case["prompt"],
             "--output-format", "stream-json",
@@ -453,6 +456,15 @@ def run_trial(
                     file=sys.stderr,
                 )
                 time.sleep(backoff_s)
+            # Every attempt starts from a freshly seeded workspace. An attempt
+            # can edit files and still die as an infra error, and a retry that
+            # inherits those edits grades a different task (observed: a retry
+            # found the task its failed attempt had written and answered that
+            # nothing needed changing).
+            if attempt:
+                shutil.rmtree(workspace, ignore_errors=True)
+                workspace.mkdir(mode=0o700)
+            seed_workspace(workspace, case, args)
             try:
                 completed = subprocess.run(
                     command, cwd=workspace, env=os.environ.copy(),
