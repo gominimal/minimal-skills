@@ -458,10 +458,9 @@ def run_trial(
                 time.sleep(backoff_s)
             # Every attempt starts from a freshly seeded workspace. An attempt
             # can edit files and still die as an infra error, and a retry that
-            # inherits those edits grades a different task (observed
-            # 2026-09-24: config-003's retry found the [tasks.test] its failed
-            # attempt had written and answered "already defined, no changes
-            # needed").
+            # inherits those edits grades a different task (observed: a retry
+            # found the task its failed attempt had written and answered that
+            # nothing needed changing).
             if attempt:
                 shutil.rmtree(workspace, ignore_errors=True)
                 workspace.mkdir(mode=0o700)
