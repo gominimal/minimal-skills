@@ -182,7 +182,7 @@ before the trial is recorded as failed with `reason: "infra_error"`, and
 infra error: the model ran out of turns on the task, so it is not retried,
 its checks and asserts still run, and the trial fails with
 `reason: "max_turns"`. Every other error result subtype (for example
-`error_during_execution`) counts as infra. Each
+`error_during_execution`) counts as infra. Each infra
 retry starts from a freshly seeded workspace, so edits a failed attempt made
 before dying are not graded as the retry's starting state. Under
 `--without-skill` there is no backoff either: one attempt, then the record. CI
