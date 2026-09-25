@@ -9,8 +9,9 @@
     "allowed_tools": ["Skill"],
     "expected_checks": [
       "correct_proxy_port",
-      { "name": "response_matches", "args": { "pattern": "proxy-server=.?http://127\\.0\\.0\\.1:7654" } },
-      { "name": "response_matches", "args": { "pattern": "\\.local\\.min\\.internal" } }
+      { "name": "response_matches", "args": { "pattern": "proxy-server=.?http://127\\.0\\.0\\.1:7654|\\b(?:browser|chrome|firefox|safari)\\b[^\\n]{0,60}\\bproxy\\b[^\\n]{0,20}127\\.0\\.0\\.1:7654" } },
+      { "name": "response_matches", "args": { "pattern": "\\.local\\.min\\.internal" } },
+      { "name": "response_not_matches", "args": { "pattern": "127\\.0\\.0\\.1:7654[^\\n]{0,40}\\b(?:or|with)\\b\\W{0,3}100\\.64\\.255\\.254:7654|100\\.64\\.255\\.254:7654\\W{0,3}\\s+as\\s+(?:the\\s+)?(?:browser'?s?\\s+)?proxy|proxy-server=.?(?:http://)?100\\.64\\.255\\.254" } }
     ],
     "functional_asserts": []
   },

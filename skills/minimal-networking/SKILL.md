@@ -45,6 +45,12 @@ play; see minimal-setup for the flag itself.
    curl -x http://127.0.0.1:7654 http://<name>.local.min.internal:4321/
    ```
 
+   The host always reaches the proxy on `127.0.0.1:7654`, whatever the
+   session's provider or network mode, macOS included. `100.64.255.254:7654`
+   is only for callers inside a session with its own namespace (see
+   Session-to-session traffic); never give it as the proxy for a host
+   browser or host `curl`.
+
 4. For a browser, launch a dedicated Chrome profile through the proxy:
 
    ```bash
@@ -58,6 +64,14 @@ play; see minimal-setup for the flag itself.
    resolves through the proxy). If that matters, use a PAC file that returns
    `PROXY 127.0.0.1:7654` for `.min.internal` hosts and `DIRECT` for
    everything else, passed with `--proxy-pac-url`.
+
+   This proxy route is the answer for a dev server that is already running:
+   it needs no reactivation. Do not tell the user to open
+   `http://127.0.0.1:<port>` directly on the host unless the session is a
+   Linux `host-net` session on the default `local-minimald` provider, the only
+   case where session and host share one loopback. Every macOS session has
+   its own namespace, so a bare `127.0.0.1:<port>` on the host does not reach
+   it.
 
 ## Hostname rule
 
@@ -146,9 +160,13 @@ min session activate --network own-ip --ingress 4321:4321 --attach
 curl http://127.0.0.1:4321/    # on the host, no proxy needed
 ```
 
+These flags take effect at activation, so this is an alternative to offer
+after the proxy route, not a replacement for it when the dev server is
+already running.
+
 | Option | Effect |
 |---|---|
-| `--network <no-net\|host-net\|own-ip>` | Network mode. `host-net` is the default (shared namespace, shared loopback, possible port collisions, direct peer reach). `no-net` is zero networking. `own-ip` gives the session its own namespace and IP. |
+| `--network <no-net\|host-net\|own-ip>` | Network mode. `host-net` is the default (shared namespace, possible port collisions, direct peer reach; the namespace is the host's only on Linux `local-minimald`, otherwise the minvmd VM's, so it shares the host's loopback only there). `no-net` is zero networking. `own-ip` gives the session its own namespace and IP. |
 | `--ingress EXT:INT[/PROTO]` | Publish session port `INT` as `127.0.0.1:EXT` on the host. Repeatable. `PROTO` is `tcp` (default) or `udp`. Requires `--network own-ip`. |
 | `min session policy <session>` | Print the session's effective network policy as JSON. Works for any session. |
 
