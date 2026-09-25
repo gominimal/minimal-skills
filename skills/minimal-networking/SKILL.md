@@ -109,10 +109,10 @@ Export the lowercase names. curl deliberately ignores an uppercase
 going direct and the peer hostname fails to resolve. Per-call, `curl -x
 http://127.0.0.1:7654 http://<peer>.local.min.internal:<port>/` works too.
 
-From a session with its own network namespace — every macOS session, and on
-Linux `--provider local-minvmd` or `--network own-ip` — `127.0.0.1:7654` is
-the sandbox's own loopback and nothing listens there. Point the proxy at the
-host alias instead; peer hostnames resolve through it exactly the same way:
+From an own-ip session (either OS), or on Linux a `--provider local-minvmd`
+session, `127.0.0.1:7654` is the sandbox's own loopback and nothing listens
+there. Point the proxy at the host alias instead; peer hostnames resolve
+through it exactly the same way:
 
 ```bash
 export http_proxy=http://100.64.255.254:7654
@@ -124,7 +124,16 @@ The recipe applies in both cases; only the proxy address changes. Verified
 from an own-ip session against a peer session serving on port 4321: via the
 alias the peer's own server answered, while `127.0.0.1:7654` refused the
 connection. A 502 from the alias means the proxy is up and the peer hostname
-is wrong — not that the route is unavailable.
+is wrong — not that the route is unavailable. On 0.6.0 a default macOS
+session reaches the proxy on both addresses; only an own-ip session needs the
+alias.
+
+A task run in a session (`min session run`) takes that session's network
+mode. Verified on 0.6.0 (macOS arm64) against a peer's `.local.min.internal`
+hostname: a task in a default session reached the peer through both
+`127.0.0.1:7654` and the alias; a task in an own-ip session reached it only
+through the alias (`127.0.0.1:7654`: network unreachable); a task in a
+`--network no-net` session reached neither address.
 
 Single host only. Do not claim credential or egress isolation: egress policy
 is topology only today, enforcement is not wired, and default sessions share
