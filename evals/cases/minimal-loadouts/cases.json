@@ -335,5 +335,21 @@
       { "name": "response_matches", "args": { "pattern": "user_policy\\.toml" } }
     ],
     "functional_asserts": []
+  },
+  {
+    "id": "loadouts-015",
+    "prompt": "I want to keep my Minimal loadout `dev` in its own git repo, with its hook scripts next to it. Where do I clone it so min picks it up, and is it a problem that my old dev.toml is still in the loadouts folder?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "capability",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      { "name": "response_matches", "args": { "pattern": "dev/loadout\\.toml|loadouts/dev/[^\\n]{0,80}\\bloadout\\.toml" } },
+      { "name": "response_matches", "args": { "pattern": "defined twice|\\berror\\b|not a precedence|\\bfails?\\b" } },
+      { "name": "response_not_matches", "args": { "pattern": "\\b(will|would) (take precedence|win|override|shadow)\\b" } },
+      "docs_urls_valid"
+    ],
+    "functional_asserts": []
   }
 ]

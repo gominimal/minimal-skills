@@ -14,10 +14,16 @@ https://minimal.dev/docs/reference/loadouts
 
 ## Files and selection
 
-- One TOML file per loadout at `<config>/minimal/loadouts/<name>.toml`
-  (`~/.config/minimal/loadouts/` on both Linux and macOS). The directory is
-  not created automatically.
-- The filename IS the loadout's name. A `name` field inside the file is
+- One TOML file per loadout, at `<config>/minimal/loadouts/<name>.toml` or
+  `<config>/minimal/loadouts/<name>/loadout.toml`
+  (`~/.config/minimal/loadouts/` on both Linux and macOS). The second layout
+  keeps the loadout, its hook scripts, and its files in one directory you
+  can clone from git. The directory is not created automatically.
+- Defining one name in BOTH layouts is an error, not a precedence rule:
+  `min loadout list` and any activation selecting it fail with `is defined
+  twice`, naming both paths. Delete one of the two files.
+- The filename IS the loadout's name (the directory name for
+  `<name>/loadout.toml`). A `name` field inside the file is
   deprecated: matching the filename warns that the field can be deleted, and
   differing from it warns and is ignored — the filename wins either way.
   There is no longer a `NameMismatch` failure. Do not write `name` into a new
@@ -26,12 +32,15 @@ https://minimal.dev/docs/reference/loadouts
   `[loadouts] default_loadouts = ["NAME"]` in `<config>/minimal/config.toml`
   to apply automatically; any explicit `--loadout` overrides the defaults,
   and `--no-loadouts` skips them all.
-- `min loadout list` shows every loadout with its description.
+- `min loadout list` shows every loadout in both layouts with its
+  description. A loadout that fails to load (malformed TOML, or a name in
+  both layouts) is reported on stderr and the command exits non-zero, with
+  the valid loadouts still listed.
 
 ## Authoring
 
 ```toml
-# file: ~/.config/minimal/loadouts/dev.toml — the filename names the loadout
+# file: ~/.config/minimal/loadouts/dev.toml (or dev/loadout.toml); the path names the loadout
 description = "helix + zellij with my dotfiles"
 packages    = ["helix", "zellij"]
 
@@ -69,8 +78,10 @@ Directives that prevent the common failures:
 - `[[lifecycle_hooks]]` DO execute. Each script is a table
   (`{ type = "inline", value = "..." }` or `{ type = "external", value =
   "./hooks/on-activate.sh" }`), never a bare string; an external path
-  resolves under `$LOADOUT_ROOT`, the `<name>/` directory beside
-  `<name>.toml`, not beside the file itself. A project declares the same
+  resolves under `$LOADOUT_ROOT`, which is `<config>/minimal/loadouts/<name>/`
+  in both layouts (beside `<name>.toml`, or the directory holding
+  `loadout.toml`). That directory must be real, not a symlink: a symlinked
+  one fails activation with `no such directory`. A project declares the same
   block one level down, as `[[session.lifecycle_hooks]]`, so a top-level copy
   pasted into a `minimal.toml` is reported as an unknown field rather than
   run.
