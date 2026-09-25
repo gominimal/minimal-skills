@@ -128,8 +128,9 @@ curl http://<peer>.local.min.internal:<port>/
 The recipe applies in both cases; only the proxy address changes. Verified
 from an own-ip session against a peer session serving on port 4321: via the
 alias the peer's own server answered, while `127.0.0.1:7654` refused the
-connection. A 502 from the alias means the proxy is up and the peer hostname
-is wrong — not that the route is unavailable. On 0.6.0 a default macOS
+connection. A 502 from the alias means the proxy is up, not that the route
+is unavailable: either the peer hostname is wrong, or nothing in the shared
+`host-net` namespace listens on the requested port. On 0.6.0 a default macOS
 session reaches the proxy on both addresses; only an own-ip session needs the
 alias.
 
@@ -235,7 +236,9 @@ accepted and effective: `--ingress 4321:4321` produces a real
 - An unknown hostname returns a well-formed `502 Bad Gateway` carrying
   `Content-Length: 0` and `Connection: close`, and the socket closes
   immediately — raw `nc`/`socat` probes return rather than hang. Read a 502
-  as "the proxy is up and the session name in the URL is wrong"; it does not
-  indicate a stuck connection.
+  as "the proxy is up": either the session name in the URL is wrong, or
+  nothing in the shared `host-net` namespace listens on that port (an
+  own-ip session's own listeners never count). It does not indicate a stuck
+  connection.
 - Never forward port 7654 itself off the machine. The proxy trusts whoever
   reaches it; tunnel a single session's port instead.
