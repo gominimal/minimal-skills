@@ -151,7 +151,7 @@
       {
         "name": "response_not_matches",
         "args": {
-          "pattern": "\\binert\\b|(?<!silently\\s)\\b(not|never|\\w+n['’]t)\\s+((actually|really|ever|currently|automatically|be|been|get)\\s+)*(execut|run|ran|fire|wire)\\w*"
+          "pattern": "\\binert\\b|(?<!silently\\s)\\b(not|never|\\w+n['’]t)\\s+((actually|really|ever|currently|automatically|be|been|being|get)\\s+)*(execut|run|ran|fire|wire)\\w*"
         }
       },
       "docs_urls_valid"
