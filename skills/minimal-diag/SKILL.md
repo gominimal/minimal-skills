@@ -56,8 +56,8 @@ both steps at once:
 min bug --upload --context "min up hangs at 'booting' and never returns"
 ```
 
-It prints two URLs — a page for a person, and the same diagnosis as JSON for
-you:
+It prints two URLs. One is a page for a person; the other is the same
+diagnosis as JSON, for you:
 
 ```
 Report:  https://agents.minimal.farm/diag/<id>
@@ -67,10 +67,10 @@ Status:  https://agents.minimal.farm/diag/api/diagnoses/<id>
 An agent reads an in-flight diagnosis by polling the status URL, which is
 JSON. Watch `state`: it goes `queued` → `running` → one of
 
-- `completed` — `report` holds the markdown, and `verdict` and `confidence`
+- `completed`: `report` holds the markdown, and `verdict` and `confidence`
   summarise it
-- `failed` — `error` says why
-- `rejected` — the bundle was not something it could diagnose
+- `failed`: `error` says why
+- `rejected`: the bundle was not something it could diagnose
 
 `step` names what it is doing meanwhile. Poll every 20 seconds or so; a
 diagnosis takes a few minutes. Paste the report URL into the issue you file,
@@ -88,28 +88,34 @@ name; either spelling works.
 ### Always write `--context`
 
 The agent that reads the bundle is told what is in it and nothing about what
-you were trying to do. One sentence — the command you ran, what you expected,
-what happened instead — is the difference between a verdict and a description
-of your log files.
+you were trying to do. One sentence saying the command you ran, what you
+expected, and what happened instead is the difference between a verdict and a
+description of your log files.
 
 ### The token
 
-The upload needs a GitHub token, taken from the first of `--token`,
-`$GITHUB_TOKEN`, `$GH_TOKEN`, then `gh auth token`. Most agents and CI jobs
-already have one, so there is usually nothing to set up. The portal asks
-GitHub once which account the token belongs to — that account is what its
-quota of 5 diagnoses a day counts — and never stores it.
+The upload needs a GitHub **user** token, taken from the first of `--token`,
+`$GITHUB_TOKEN`, `$GH_TOKEN`, then `gh auth token`. On a developer machine
+`gh auth login` has usually already supplied one. The portal asks GitHub once
+which account the token belongs to, counts that account against its quota of
+5 diagnoses a day, and never stores the token.
 
-If none of those rungs has a token, say so and stop: do not ask the user to
-paste a token into the conversation. Have them run `gh auth login`, or upload
+One trap: the `GITHUB_TOKEN` a GitHub Actions job gets automatically is an
+**app installation token**, not a user token, and the portal refuses it. A
+workflow that uploads needs a personal access token in the environment
+instead. The refusal says which kind it wanted, so read it rather than
+assuming the token expired.
+
+If no rung has a usable token, say so and stop: do not ask the user to paste
+a token into the conversation. Have them run `gh auth login`, or upload
 through the page at https://agents.minimal.farm/diag themselves.
 
 ### Before you upload
 
 Uploading sends the bundle off the machine, which collecting it does not.
-The archive is the same either way — secret-shaped values redacted, file
-contents never included — but confirm with the user before uploading a bundle
-from a machine you were not asked to diagnose. Anyone with the report URL can
+The archive is the same either way, with secret-shaped values redacted and
+file contents never included, but confirm with the user before uploading a
+bundle from a machine you were not asked to diagnose. Anyone with the report URL can
 read the report.
 
 ## Reporting
@@ -122,7 +128,7 @@ https://minimal.dev/docs/reference/cli-min
 ## Out of scope
 
 Do not root-cause the failure yourself from this skill. Collect the bundle
-and, if the user wants a verdict, upload it — the portal's agent reads the
+and, if the user wants a verdict, upload it. The portal's agent reads the
 bundle against Minimal's own source, which you cannot do from here. For
 deeper setup and session troubleshooting, use the minimal-setup skill.
 Session hostnames not resolving, or minimald warning that it could not
