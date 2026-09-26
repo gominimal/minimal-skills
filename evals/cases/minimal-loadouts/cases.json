@@ -91,7 +91,7 @@
       {
         "name": "response_not_matches",
         "args": {
-          "pattern": "(?:^|[.!?]\\s+)(?!(?:[^.!?\\n]|[.!?](?=\\S))*(?:\\b(?:neither|nor|no|not|never)\\b|n't\\b))(?:[^.!?\\n]|[.!?](?=\\S))*NameMismatch"
+          "pattern": "(?:^|[.!?;,:]\\s*)(?!(?:[^.!?;,:\\n]|[.!?](?=\\S))*(?:\\b(?:neither|nor|no|not|never)\\b|n't\\b))(?:[^.!?;,:\\n]|[.!?](?=\\S))*?NameMismatch"
         }
       },
       "docs_urls_valid"
@@ -346,8 +346,8 @@
     "allowed_tools": ["Skill"],
     "expected_checks": [
       { "name": "response_matches", "args": { "pattern": "dev/loadout\\.toml|loadouts/dev/[^\\n]{0,80}\\bloadout\\.toml|\\bloadout\\.toml\\b[^\\n]{0,80}loadouts/dev\\b" } },
-      { "name": "response_matches", "args": { "pattern": "defined twice|(?:^|[.!?]\\s+)(?:(?!(?:\\b(?:neither|nor|no|not|never)\\b|n't\\b))(?:[^.!?\\n]|[.!?](?=\\S)))*?\\b(?:an? (?:hard )?error\\b|(?:will|would) fail\\b|fails (?:with|to)\\b)" } },
-      { "name": "response_not_matches", "args": { "pattern": "(?:^|[.!?]\\s+)(?!(?:[^.!?\\n]|[.!?](?=\\S))*(?:\\b(?:neither|nor|no|not|never)\\b|n't\\b))(?:[^.!?\\n]|[.!?](?=\\S))*?\\b(?:dev/loadout\\.toml|dev\\.toml|director(?:y|ies)|layouts?|flat file|new one|old one)(?:[^.!?\\n]|[.!?](?=\\S)){0,30}?\\b(?:takes precedence|wins|overrides|shadows|(?:will|would) (?:take precedence|win|override|shadow))\\b" } },
+      { "name": "response_matches", "args": { "pattern": "(?:^|[.!?;,:]\\s*)(?!(?:[^.!?;,:\\n]|[.!?](?=\\S))*(?:\\b(?:neither|nor|no|not|never)\\b|n't\\b))(?:[^.!?;,:\\n]|[.!?](?=\\S))*?\\b(?:defined twice|an? (?:hard )?error\\b|(?:will|would) fail\\b|fails (?:with|to)\\b)" } },
+      { "name": "response_not_matches", "args": { "pattern": "(?:^|[.!?;,:]\\s*)(?!(?:[^.!?;,:\\n]|[.!?](?=\\S))*(?:\\b(?:neither|nor|no|not|never)\\b|n't\\b))(?:[^.!?;,:\\n]|[.!?](?=\\S))*?\\b(?:dev/loadout\\.toml|dev\\.toml|director(?:y|ies)|layouts?|flat file|new one|old one)(?:[^.!?;,:\\n]|[.!?](?=\\S)){0,30}?\\b(?:takes precedence|wins|overrides|shadows|(?:will|would) (?:take precedence|win|override|shadow))\\b" } },
       "docs_urls_valid"
     ],
     "functional_asserts": []
