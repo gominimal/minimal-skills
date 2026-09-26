@@ -1,6 +1,6 @@
 ---
 name: minimal-diag
-description: Use when Minimal itself is broken or misbehaving and the user wants to report a bug, collect diagnostics, or get a diagnostic bundle diagnosed, e.g. Minimal is broken, a min session won't start, the minimald daemon is unreachable, a VM boot hangs, or the user has a minimal-diag bundle to send or upload, and the user mentions Minimal. Do not use for session hostnames or port 7654 not routing (minimal-networking), for general debugging of the user's own application, or for bug reports about non-Minimal software.
+description: Use when Minimal itself is broken or misbehaving and the user wants to report a bug, collect diagnostics, or send an existing bundle for diagnosis, e.g. Minimal is broken, a min session won't start, the minimald daemon is unreachable, a VM boot hangs, or the user has a minimal-diag bundle to send or upload, and the user mentions Minimal. Do not use for session hostnames or port 7654 not routing (minimal-networking), for a daemon that fails to start only when several commands run at once (minimal-setup), for general debugging of the user's own application, or for bug reports about non-Minimal software.
 ---
 
 # minimal-diag
