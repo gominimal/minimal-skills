@@ -176,7 +176,13 @@ tightened rather than left to the retry budget.
 Infra errors are not verdicts: a claude invocation that itself fails (no
 events, an error result, or nonzero exit with no result event; rate limits
 and auth failures look like this) is retried twice with backoff (15s, 45s)
-before the trial is recorded as failed with `reason: "infra_error"`. Each
+before the trial is recorded as failed with `reason: "infra_error"`, and
+`infra_error_detail` holds the last result event's `subtype`, `errors` and
+`result` text plus the stderr tail. An `error_max_turns` result is not an
+infra error: the model ran out of turns on the task, so it is not retried,
+its checks and asserts still run, and the trial fails with
+`reason: "max_turns"`. Every other error result subtype (for example
+`error_during_execution`) counts as infra. Each infra
 retry starts from a freshly seeded workspace, so edits a failed attempt made
 before dying are not graded as the retry's starting state. Under
 `--without-skill` there is no backoff either: one attempt, then the record. CI
