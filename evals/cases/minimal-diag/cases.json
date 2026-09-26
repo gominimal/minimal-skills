@@ -169,5 +169,46 @@
     "allowed_tools": ["Skill"],
     "expected_checks": [],
     "functional_asserts": []
+  },
+  {
+    "id": "diag-014",
+    "prompt": "min up hangs forever on this machine. collect a minimal diagnostic bundle and get it diagnosed, I don't want to read a tarball myself",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      "min_bug_suggested",
+      { "name": "response_matches", "args": { "pattern": "--upload" } },
+      { "name": "response_matches", "args": { "pattern": "--context" } }
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "diag-015",
+    "prompt": "I already have a minimal diag bundle saved from an earlier run. what is the command to send it for diagnosis?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      { "name": "response_matches", "args": { "pattern": "min diag upload" } }
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "diag-016",
+    "prompt": "upload my minimal diag bundle. what do I need to set up first?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      { "name": "response_matches", "args": { "pattern": "(?i)GITHUB_TOKEN|gh auth" } }
+    ],
+    "functional_asserts": []
   }
 ]
