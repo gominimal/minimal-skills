@@ -1,6 +1,6 @@
 ---
 name: minimal-config
-description: "Use when writing or editing minimal.toml, adding a package to a project's Minimal config, defining or fixing a Minimal task, pinning or updating the [upstream], resolving config check errors, explaining unexpected locked_commit changes, or choosing a stack or output for the Minimal build system. Do not use for session lifecycle or host CLI usage (minimal-setup), working inside a sandbox (minimal-sandbox), generic TOML syntax, or other manifests such as Cargo.toml or package.json."
+description: "Use when writing or editing minimal.toml, adding a package to a project's Minimal config, defining or fixing a Minimal task, pinning or updating the [upstream], resolving `mip check` errors, explaining unexpected locked_commit changes, or choosing a stack or output for the Minimal build system. Do not use for session lifecycle or host CLI usage (minimal-setup), working inside a sandbox (minimal-sandbox), generic TOML syntax, or other manifests such as Cargo.toml or package.json."
 ---
 
 # Authoring and validating minimal.toml
