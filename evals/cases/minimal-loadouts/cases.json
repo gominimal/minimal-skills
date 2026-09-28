@@ -91,7 +91,7 @@
       {
         "name": "response_not_matches",
         "args": {
-          "pattern": "NameMismatch"
+          "pattern": "(?:^|[.!?;,:]\\s*)(?!(?:[^.!?;,:\\n]|[.!?](?=\\S))*(?:\\b(?:neither|nor|no|not|never)\\b|n't\\b))(?:[^.!?;,:\\n]|[.!?](?=\\S))*?NameMismatch"
         }
       },
       "docs_urls_valid"
@@ -253,7 +253,7 @@
       {
         "name": "response_matches",
         "args": {
-          "pattern": "\\*\\*/\\*\\.lua|glob"
+          "pattern": "\\*\\*/\\*\\.lua|glob|source\\s*=\\s*\"~/dotfiles/nvim/?\""
         }
       },
       "docs_urls_valid"
@@ -333,6 +333,22 @@
       { "name": "response_matches", "args": { "pattern": "allow\\s*=\\s*\\[" } },
       { "name": "response_matches", "args": { "pattern": "project[^.\\n]{0,40}(root|path|director|declar)" } },
       { "name": "response_matches", "args": { "pattern": "user_policy\\.toml" } }
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "loadouts-015",
+    "prompt": "I want to keep my Minimal loadout `dev` in its own git repo, with its hook scripts next to it. Where do I clone it so min picks it up, and is it a problem that my old dev.toml is still in the loadouts folder?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "capability",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      { "name": "response_matches", "args": { "pattern": "dev/loadout\\.toml|loadouts/dev/[^\\n]{0,80}\\bloadout\\.toml|\\bloadout\\.toml\\b[^\\n]{0,80}loadouts/dev\\b" } },
+      { "name": "response_matches", "args": { "pattern": "(?:^|[.!?;,:]\\s*)(?!(?:[^.!?;,:\\n]|[.!?](?=\\S))*(?:\\b(?:neither|nor|no|not|never)\\b|n't\\b))(?:[^.!?;,:\\n]|[.!?](?=\\S))*?\\b(?:defined twice|an? (?:hard )?error\\b|(?:will|would) fail\\b|fails (?:with|to)\\b)" } },
+      { "name": "response_not_matches", "args": { "pattern": "(?:^|[.!?;,:]\\s*)(?!(?:[^.!?;,:\\n]|[.!?](?=\\S))*(?:\\b(?:neither|nor|no|not|never)\\b|n't\\b))(?:[^.!?;,:\\n]|[.!?](?=\\S))*?\\b(?:dev/loadout\\.toml|dev\\.toml|director(?:y|ies)|layouts?|flat file|new one|old one)(?:[^.!?;,:\\n]|[.!?](?=\\S)){0,30}?\\b(?:takes precedence|wins|overrides|shadows|(?:will|would) (?:take precedence|win|override|shadow))\\b" } },
+      "docs_urls_valid"
     ],
     "functional_asserts": []
   }
