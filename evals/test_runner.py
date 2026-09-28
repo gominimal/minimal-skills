@@ -57,5 +57,66 @@ class InfraRetryWorkspaceTest(unittest.TestCase):
         self.assertEqual(seen, [SEEDED_TOML, SEEDED_TOML])
 
 
+MAX_TURNS_EVENT = json.dumps({
+    "type": "result", "subtype": "error_max_turns", "is_error": True,
+    "num_turns": 11, "errors": ["Reached maximum number of turns (10)"],
+})
+
+EXECUTION_ERROR_EVENT = json.dumps({
+    "type": "result", "subtype": "error_during_execution", "is_error": True,
+    "errors": ["API Error: 529 overloaded"],
+})
+
+
+def _args() -> argparse.Namespace:
+    return argparse.Namespace(
+        without_skill=False, model="fixture", skip_permissions=False, judge=False
+    )
+
+
+class ResultClassificationTest(unittest.TestCase):
+    def test_max_turns_is_a_failed_trial_not_an_infra_error(self) -> None:
+        calls: list[int] = []
+
+        def fake_run(command, cwd, **kwargs):
+            calls.append(1)
+            return subprocess.CompletedProcess(command, 1, MAX_TURNS_EVENT, "")
+
+        with mock.patch.object(runner.subprocess, "run", side_effect=fake_run), \
+                mock.patch.object(runner.time, "sleep") as sleep, \
+                mock.patch.object(
+                    runner, "run_checks", return_value=({"fixture": True}, True)
+                ) as run_checks, \
+                mock.patch.object(
+                    runner, "run_asserts",
+                    return_value=([{"command": "fixture", "ok": True}], True),
+                ) as run_asserts:
+            record = runner.run_trial("minimal-config", CASE, _args(), known=[])
+
+        self.assertEqual(len(calls), 1)
+        sleep.assert_not_called()
+        run_checks.assert_called_once()
+        run_asserts.assert_called_once()
+        self.assertEqual(record["checks"], {"fixture": True})
+        self.assertEqual(record["asserts"], [{"command": "fixture", "ok": True}])
+        self.assertEqual(record.get("reason"), "max_turns")
+        self.assertNotIn("infra_errors", record)
+        self.assertFalse(record["passed"])
+
+    def test_infra_error_detail_records_result_subtype_and_errors(self) -> None:
+        def fake_run(command, cwd, **kwargs):
+            return subprocess.CompletedProcess(command, 1, EXECUTION_ERROR_EVENT, "")
+
+        with mock.patch.object(runner.subprocess, "run", side_effect=fake_run), \
+                mock.patch.object(runner.time, "sleep"):
+            record = runner.run_trial("minimal-config", CASE, _args(), known=[])
+
+        self.assertEqual(record.get("reason"), "infra_error")
+        self.assertEqual(record.get("infra_errors"), 3)
+        detail = record.get("infra_error_detail", "")
+        self.assertIn("error_during_execution", detail)
+        self.assertIn("API Error: 529 overloaded", detail)
+
+
 if __name__ == "__main__":
     unittest.main()
