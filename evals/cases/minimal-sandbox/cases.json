@@ -199,7 +199,7 @@
       {
         "name": "response_matches",
         "args": {
-          "pattern": "noprofile|no rc|does not source|never sourced|no startup files|loadout"
+          "pattern": "non-?interactive|\\bbash -c\\b"
         }
       }
     ],
