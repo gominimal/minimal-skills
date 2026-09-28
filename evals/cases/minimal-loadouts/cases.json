@@ -172,13 +172,13 @@
       {
         "name": "response_matches",
         "args": {
-          "pattern": "\\[vars\\]|vars"
+          "pattern": "\\bdest\\b|re-?activat|new session|fresh session|next attach"
         }
       },
       {
-        "name": "response_matches",
+        "name": "response_not_matches",
         "args": {
-          "pattern": "--rcfile|daemon'?s?( own)? rc"
+          "pattern": "\\.bashrc`?[^\\n.;]{0,25}\\b(?:never|not|isn't|won't be)\\s+(?:(?:be|get|being)\\s+)?(?:read|sourced|loaded)|\\bnever\\s+(?:reads?|sources?|loads?)\\s+(?:your\\s+|the\\s+|any\\s+)?`?~?/?\\.bashrc|\\.bashrc`?[^\\n.;]{0,25}\\b(?:does nothing|is ignored|are ignored|inert)|patching\\s+`?~?/?\\.bashrc[^\\n]{0,30}does nothing|only (?:file|rc)[^\\n.]{0,20}reads is the daemon"
         }
       },
       "docs_urls_valid"

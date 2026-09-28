@@ -108,17 +108,21 @@ Directives that prevent the common failures:
   path in it resolve in the sandbox. Hooks run after `patches` are in place,
   so a hook may read a file the loadout patched in.
 
-## Shell personalization: use vars, not rc files
+## Shell personalization: rc files and vars
 
 By default the attach shell is
-`bash --noprofile --rcfile <daemon rc> -i`: the only file it reads is the
-daemon's own rc, so patching `.bashrc`/`.bash_profile` does nothing. Setting
-`SHELL` in `[vars]` to an installed known shell (with its package in the
-loadout) changes which shell attach opens: `SHELL = "/usr/bin/fish"` plus
-`packages = ["fish"]` lands you in fish. For bash, set shell config
-through `[vars]` instead: `PS1` in `[vars]` replaces the stock prompt, and a
-once-only banner ships as a `PROMPT_COMMAND` payload that unsets itself.
-Patch rc files only for tools that read them explicitly.
+`bash --noprofile --rcfile <daemon rc> -i`, an interactive non-login bash.
+The daemon's rc sources `~/.bashrc` from the session home, so a patched-in
+`.bashrc` applies. The login chain (`.bash_profile`, `.bash_login`,
+`.profile`) is never read; if your bash setup lives in `.bash_profile`, patch
+it in with `dest = ".bashrc"`. A `DEBUG` trap in your `.bashrc` replaces the
+daemon's; have it call `__minimal_attach_env`. Setting `SHELL` in `[vars]` to
+an installed known shell (with its package in the loadout) changes which
+shell attach opens: `SHELL = "/usr/bin/fish"` plus `packages = ["fish"]`
+lands you in fish, which reads its own patched `config.fish`. Env-only
+settings can also go in `[vars]`: `PS1` in `[vars]` replaces the stock
+prompt, and a once-only banner ships as a `PROMPT_COMMAND` payload that
+unsets itself.
 
 ## Composition rules
 

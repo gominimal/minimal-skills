@@ -73,8 +73,11 @@ Not covered by the public reference, so treat this as the record:
 - The attach shell is `bash --noprofile --rcfile <daemon rc> -i` unless the
   session was composed with `SHELL` naming an installed known shell (fish,
   for example), in which case that shell is what attach opens; read `$SHELL`
-  before assuming bash. The only rc bash reads here is the daemon's, so edits
-  to `~/.bashrc` or `~/.profile` never take effect. Shell personalization
-  belongs in a loadout, configured from the host.
+  before assuming bash. The attach bash is a non-login shell whose rc
+  sources `~/.bashrc`, so a `~/.bashrc` edit applies from the next attach;
+  `~/.profile` and `~/.bash_profile` are never read. Commands you run
+  non-interactively (a tool call, `bash -c`) read no rc file at all, so
+  export what they need in the same command. Shell personalization that
+  should outlive the session belongs in a loadout, configured from the host.
 - In a task sandbox, the project tree is the working copy; assume nothing
   outside it survives the task.
