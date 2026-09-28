@@ -90,7 +90,7 @@
         "name": "workspace_file_matches",
         "args": {
           "path": "minimal.toml",
-          "pattern": "cargo nextest"
+          "pattern": "cargo\\W+nextest"
         }
       },
       "mip_check_suggested"

@@ -172,7 +172,7 @@
       {
         "name": "response_matches",
         "args": {
-          "pattern": "\\bdest\\b|re-?activat|new session|fresh session|next attach"
+          "pattern": "dest\\s*=\\s*\\\\?[\\\"']?~?/?\\.bashrc|re-?activat|new session|fresh session|next attach"
         }
       },
       {

@@ -199,7 +199,7 @@
       {
         "name": "response_matches",
         "args": {
-          "pattern": "non-?interactive|bash -c|next attach|new attach|interactive (?:attach )?shell|reads? no rc"
+          "pattern": "non-?interactive|\\bbash -c\\b"
         }
       }
     ],

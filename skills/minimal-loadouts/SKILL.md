@@ -115,8 +115,8 @@ By default the attach shell is
 The daemon's rc sources `~/.bashrc` from the session home, so a patched-in
 `.bashrc` applies. The login chain (`.bash_profile`, `.bash_login`,
 `.profile`) is never read; if your bash setup lives in `.bash_profile`, patch
-it in with `dest = ".bashrc"`. A `DEBUG` trap in your `.bashrc` replaces the
-daemon's; have it call `__minimal_attach_env`. Setting `SHELL` in `[vars]` to
+it in with `dest = ".bashrc"`. A `.bashrc` that sets its own `DEBUG` trap
+has a caveat; see the reference above. Setting `SHELL` in `[vars]` to
 an installed known shell (with its package in the loadout) changes which
 shell attach opens: `SHELL = "/usr/bin/fish"` plus `packages = ["fish"]`
 lands you in fish, which reads its own patched `config.fish`. Env-only
