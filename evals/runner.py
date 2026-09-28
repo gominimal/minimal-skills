@@ -270,16 +270,56 @@ def extract_response_text(events: list[dict]) -> str:
     return "\n".join(parts)
 
 
+# Error result subtypes that are the case's outcome, not the CLI failing,
+# mapped to the trial reason they record. Running out of turns is the model
+# not finishing the task, and retrying it with backoff only repeats it
+# (observed: a functional case hit --max-turns on every attempt of every
+# trial and was reported as bare infra errors).
+CASE_OUTCOME_SUBTYPES = {"error_max_turns": "max_turns"}
+
+
 def _is_infra_error(returncode: int, events: list[dict]) -> bool:
     """True when the claude invocation itself failed rather than the case:
-    nonzero exit with no usable result event, an explicit error result, or a
-    run that produced no events at all."""
+    nonzero exit with no usable result event, an error result whose subtype
+    is not a case outcome, or a run that produced no events at all."""
     result_events = [e for e in events if e.get("type") == "result"]
     if not events:
         return True
-    if result_events and any(e.get("is_error") for e in result_events):
+    if any(
+        e.get("is_error") and e.get("subtype") not in CASE_OUTCOME_SUBTYPES
+        for e in result_events
+    ):
         return True
     return returncode != 0 and not result_events
+
+
+def _case_outcome(events: list[dict]) -> str | None:
+    """The trial reason for an error result that is a case outcome, if any."""
+    for event in events:
+        if event.get("type") == "result" and event.get("is_error"):
+            outcome = CASE_OUTCOME_SUBTYPES.get(event.get("subtype"))
+            if outcome:
+                return outcome
+    return None
+
+
+def _infra_error_detail(stderr: str | None, events: list[dict]) -> str:
+    """Stderr tail plus the last result event's subtype and error text, so
+    the report says why the invocation failed (observed: infra errors with
+    empty stderr left a night of failures with no recorded cause)."""
+    parts = []
+    results = [e for e in events if e.get("type") == "result"]
+    if results:
+        last = results[-1]
+        parts.append(f"result subtype={last.get('subtype')}")
+        if last.get("errors"):
+            parts.append(f"errors={last['errors']}"[:500])
+        if isinstance(last.get("result"), str) and last["result"]:
+            parts.append(f"result={last['result']}"[:500])
+    stderr_tail = (stderr or "").strip()[-500:]
+    if stderr_tail:
+        parts.append(f"stderr={stderr_tail}")
+    return "; ".join(parts)
 
 
 def parse_stream_json(stdout: str) -> list[dict]:
@@ -439,11 +479,11 @@ def run_trial(
         if args.skip_permissions:
             command.append("--dangerously-skip-permissions")
         # A CLI-level failure (nonzero exit with no result event, or an
-        # error result) is INFRA noise: rate limits, auth, transient API
-        # errors. It says nothing about the skill, so retry with backoff
-        # instead of grading it (observed: a shared-token rate limit turned
-        # the tail of a nightly run into ~1s failures recorded as skill
-        # regressions).
+        # error result that is not a case outcome) is INFRA noise: rate
+        # limits, auth, transient API errors. It says nothing about the
+        # skill, so retry with backoff instead of grading it (observed: a
+        # shared-token rate limit turned the tail of a nightly run into ~1s
+        # failures recorded as skill regressions).
         # --without-skill never retries, this loop included: one attempt,
         # recorded as an infra error, is the whole budget there.
         backoffs = (0,) if args.without_skill else (0, 15, 45)
@@ -479,9 +519,9 @@ def run_trial(
             record["infra_errors"] = record.get("infra_errors", 0) + 1
         else:
             record["reason"] = "infra_error"
-            stderr_tail = (completed.stderr or "").strip()[-500:]
-            if stderr_tail:
-                record["infra_error_detail"] = stderr_tail
+            detail = _infra_error_detail(completed.stderr, events)
+            if detail:
+                record["infra_error_detail"] = detail
             return record
 
         response_text = extract_response_text(events)
@@ -502,6 +542,13 @@ def run_trial(
         record["checks"], checks_ok = run_checks(case, result)
         record["asserts"], record["asserts_ok"] = run_asserts(case, workspace)
         record["passed"] = record["trigger_ok"] and checks_ok and record["asserts_ok"]
+        # A case outcome such as running out of turns fails the trial even if
+        # the partial work passes; checks and asserts still ran above so the
+        # report shows how far it got.
+        outcome = _case_outcome(events)
+        if outcome:
+            record["reason"] = outcome
+            record["passed"] = False
 
         if args.judge:
             import judge as judge_mod

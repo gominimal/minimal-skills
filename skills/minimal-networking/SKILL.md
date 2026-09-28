@@ -12,8 +12,10 @@ re-verified on 2026-08-26 against min 0.5.4-dev.23.g5e4c5ae1 (Linux aarch64);
 and the proxy port, the session-hostname route and the 502 shape were
 re-checked on 2026-09-03 against min 0.5.4-dev.62.g30a3031d (macOS arm64);
 and the bind each preview route needs was checked on 2026-09-25 against
-min 0.5.5-dev.15.gc6cc5fe5 (macOS arm64). None of it is a stable contract. For general `min` CLI context see
-https://minimal.dev/docs/reference/cli-min (the only relevant public page).
+min 0.5.5-dev.15.gc6cc5fe5 (macOS arm64), then re-checked the same day
+against min 0.6.0 (macOS arm64), which also showed that the proxy route does
+not reach own-ip sessions. None of it is a stable contract. For general
+`min` CLI context see https://minimal.dev/docs/reference/cli-min (the only relevant public page).
 Do not cite or invent any other minimal.dev URL for networking topics; none
 exists.
 
@@ -34,8 +36,9 @@ play; see minimal-setup for the flag itself.
    ```
 
 2. Inside the session, start the dev server normally. The default localhost
-   bind is fine for this proxy route, in host-net and own-ip sessions alike;
-   nothing needs to be declared up front.
+   bind is fine for this proxy route in a default `host-net` session; nothing
+   needs to be declared up front. The proxy route does not reach an own-ip
+   session; preview one through `--ingress` (see own-ip mode below).
 
    ```bash
    npm run dev
@@ -72,16 +75,22 @@ play; see minimal-setup for the flag itself.
    `http://127.0.0.1:<port>` directly on the host unless the session is a
    Linux `host-net` session on the default `local-minimald` provider, where
    session and host share one loopback, or the port was published with
-   `--ingress` at activation and the server binds all addresses (below). Every macOS session has its own
-   namespace, so without `--ingress` a bare `127.0.0.1:<port>` on the host
-   does not reach it.
+   `--ingress` at activation and the server binds all addresses (below).
+   Every macOS session has its own namespace, so without `--ingress` a bare
+   `127.0.0.1:<port>` on the host does not reach it.
 
 ## Hostname rule
 
 Every active session registers `<name>.local.min.internal`. `<name>` is the
 session name if set, otherwise the project directory basename, lowercased.
-`min session rename <id> <name>` re-registers the hostname live. The port in
-the URL selects the port inside the session.
+`min session rename <id> <name>` re-registers the hostname live. The
+hostname only gates the request: it must name an active session. The port in
+the URL is then looked up in the shared `host-net` namespace, not inside the
+named session. For a default session that is where its server listens, so
+the URL works. It also means the hostname does not isolate sessions:
+`<any-session>.local.min.internal:<port>` reaches whichever `host-net`
+session listens on that port, and never an own-ip session (see own-ip mode
+below).
 
 ## WebSockets and HMR
 
@@ -105,10 +114,10 @@ Export the lowercase names. curl deliberately ignores an uppercase
 going direct and the peer hostname fails to resolve. Per-call, `curl -x
 http://127.0.0.1:7654 http://<peer>.local.min.internal:<port>/` works too.
 
-From a session with its own network namespace — every macOS session, and on
-Linux `--provider local-minvmd` or `--network own-ip` — `127.0.0.1:7654` is
-the sandbox's own loopback and nothing listens there. Point the proxy at the
-host alias instead; peer hostnames resolve through it exactly the same way:
+From an own-ip session (either OS), or on Linux a `--provider local-minvmd`
+session, `127.0.0.1:7654` is the sandbox's own loopback and nothing listens
+there. Point the proxy at the host alias instead; peer hostnames resolve
+through it exactly the same way:
 
 ```bash
 export http_proxy=http://100.64.255.254:7654
@@ -119,8 +128,18 @@ curl http://<peer>.local.min.internal:<port>/
 The recipe applies in both cases; only the proxy address changes. Verified
 from an own-ip session against a peer session serving on port 4321: via the
 alias the peer's own server answered, while `127.0.0.1:7654` refused the
-connection. A 502 from the alias means the proxy is up and the peer hostname
-is wrong — not that the route is unavailable.
+connection. A 502 from the alias means the proxy is up, not that the route
+is unavailable: either the peer hostname is wrong, or nothing in the shared
+`host-net` namespace listens on the requested port. On 0.6.0 a default macOS
+session reaches the proxy on both addresses; only an own-ip session needs the
+alias.
+
+A task run in a session (`min session run`) takes that session's network
+mode. Verified on 0.6.0 (macOS arm64) against a peer's `.local.min.internal`
+hostname: a task in a default session reached the peer through both
+`127.0.0.1:7654` and the alias; a task in an own-ip session reached it only
+through the alias (`127.0.0.1:7654`: network unreachable); a task in a
+`--network no-net` session reached neither address.
 
 Single host only. Do not claim credential or egress isolation: egress policy
 is topology only today, enforcement is not wired, and default sessions share
@@ -169,11 +188,27 @@ Astro and Vite, `--host`). One on the default localhost bind is not reached
 through `--ingress`: the host's connection is reset. Verified on the
 2026-09-25 check: in one own-ip session, a `127.0.0.1:4321` listener reset
 the host's `curl` through `--ingress 18431:4321`, a `0.0.0.0:4322` listener
-answered through `--ingress 18432:4322`, and the proxy route reached both.
+answered through `--ingress 18432:4322`. Same result on 0.6.0.
 
-These flags take effect at activation, so this is an alternative to offer
-after the proxy route, not a replacement for it when the dev server is
-already running.
+The proxy route does not reach an own-ip session. The port in its
+`<name>.local.min.internal` URL is looked up in the shared `host-net`
+namespace (see Hostname rule): the result is a `502` when nothing there
+listens on that port, or some other session's server when one does. On macOS
+this holds even at the session's `--ingress` external port. Verified on 0.6.0
+(macOS arm64) with a different response body in each session:
+- Through the proxy, the own-ip session's hostname returned the `host-net`
+  session's body on both ports.
+- It kept returning `502` for 13 minutes while no `host-net` session
+  listened.
+- `<name>.local.min.internal:18432` returned `502` while `127.0.0.1:18432`
+  directly returned the own-ip session's own body.
+
+For an own-ip session, use `--ingress` with an all-addresses bind and browse
+`127.0.0.1:<EXT>` directly; do not offer the proxy route.
+
+These flags take effect at activation. For a default `host-net` session
+whose dev server is already running, offer the proxy route first; for an
+own-ip session, `--ingress` is the only host route.
 
 | Option | Effect |
 |---|---|
@@ -201,7 +236,9 @@ accepted and effective: `--ingress 4321:4321` produces a real
 - An unknown hostname returns a well-formed `502 Bad Gateway` carrying
   `Content-Length: 0` and `Connection: close`, and the socket closes
   immediately — raw `nc`/`socat` probes return rather than hang. Read a 502
-  as "the proxy is up and the session name in the URL is wrong"; it does not
-  indicate a stuck connection.
+  as "the proxy is up": either the session name in the URL is wrong, or
+  nothing in the shared `host-net` namespace listens on that port (an
+  own-ip session's own listeners never count). It does not indicate a stuck
+  connection.
 - Never forward port 7654 itself off the machine. The proxy trusts whoever
   reaches it; tunnel a single session's port instead.
