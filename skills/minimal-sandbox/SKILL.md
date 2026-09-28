@@ -44,6 +44,10 @@ Read the row that matches the activity instead of guessing flags. A project
 may also carry its own `AGENTS.md` or `CLAUDE.md` with conventions that the
 public docs do not cover; read it before writing packages or config.
 
+Commits you make in the workspace go back to the host checkout with
+`git push min://<session>`, run from inside the session (sessions concept
+page above).
+
 ## Directives that hold regardless of version
 
 - Host package managers (`apt`, `apk`, `dnf`, `brew`) do not exist in here,
