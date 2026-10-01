@@ -240,5 +240,16 @@ accepted and effective: `--ingress 4321:4321` produces a real
   nothing in the shared `host-net` namespace listens on that port (an
   own-ip session's own listeners never count). It does not indicate a stuck
   connection.
+- When checking whether the proxy routes, read the status code, not the
+  response body. The proxy forwards the request in absolute form
+  (`GET http://<name>.local.min.internal:<port>/ ...`), which some servers
+  do not parse as a path — Python's `http.server` treats the whole URI as
+  the path and answers `404` no matter what it is serving. So a correctly
+  routed request can return `404` with an empty-looking body, and two
+  sessions serving different content return the same `404`. `502` means no
+  backend answered in `host-net`: a wrong session name, or a valid one
+  (an own-ip session's included) with nothing in `host-net` on that port.
+  Anything the backend answers, `404` included, means the proxy routed.
+  Verified on 0.6.0 (macOS arm64) with `python3 -m http.server`.
 - Never forward port 7654 itself off the machine. The proxy trusts whoever
   reaches it; tunnel a single session's port instead.

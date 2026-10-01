@@ -294,5 +294,21 @@
       "docs_urls_valid"
     ],
     "functional_asserts": []
+  },
+  {
+    "id": "net-022",
+    "prompt": "I'm checking whether the minimal proxy routes to my session. I started `python3 -m http.server` in two sessions with different files in each, and through http://127.0.0.1:7654 both session hostnames return the same 404. Is the proxy routing to the wrong session?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      { "name": "response_matches", "args": { "pattern": "absolute.?form|(full|whole|entire|complete)\\s+(URI|URL)|URI\\s+as\\s+the\\s+path|as\\s+the\\s+path" } },
+      { "name": "response_matches", "args": { "pattern": "502" } },
+      { "name": "response_not_matches", "args": { "pattern": "(?:^|[.!?;,:]\\s*)(?!(?:[^.!?;,:\\n]|[.!?](?=\\S))*(?:\\b(?:neither|nor|no|not|never|nothing)\\b|n't\\b))(?:[^.!?;,:\\n]|[.!?](?=\\S))*?\\b(?:routing|routed|proxy)\\b[^.!?;,:\\n]{0,30}?wrong session" } },
+      "docs_urls_valid"
+    ],
+    "functional_asserts": []
   }
 ]
