@@ -580,6 +580,9 @@ def trial_failures(trial: dict) -> list[str]:
     """Name what failed a trial: the check, assert, trigger or outcome."""
     if trial["passed"]:
         return []
+    # A timeout or exhausted infra retries returns before anything is graded.
+    if trial.get("reason") in ("timeout", "infra_error"):
+        return [trial["reason"]]
     failures = [k for k, ok in trial.get("checks", {}).items() if not ok]
     failures += [
         f"assert `{a['command']}`" for a in trial.get("asserts", []) if not a.get("ok")

@@ -158,6 +158,11 @@ class SummaryTest(unittest.TestCase):
         self.assertEqual(runner.trial_failures(trial), ["assert `min check`", "trigger"])
         self.assertEqual(runner.trial_failures(_trial(True)), [])
 
+    def test_trial_failures_does_not_blame_an_ungraded_trigger(self) -> None:
+        for reason in ("timeout", "infra_error"):
+            trial = _trial(False, trigger_ok=False, reason=reason)
+            self.assertEqual(runner.trial_failures(trial), [reason])
+
 
 if __name__ == "__main__":
     unittest.main()
