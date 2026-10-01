@@ -629,16 +629,19 @@ def render_summary(case_reports: list[dict], totals: dict) -> str:
             "tightening.",
         ]
 
-    # What failed, per case, counted over the final attempt's trials, so a
-    # check that rejects correct answers is visible without the JSON report.
+    # What failed, per case, counted over every attempt's trials, so a check
+    # that rejects correct answers is visible without the JSON report, even
+    # when a retry passed cleanly.
     failing = []
     for case in case_reports:
+        all_trials = [t for a in case.get("earlier_attempts", []) for t in a]
+        all_trials += case["trials"]
         counts: dict[str, int] = {}
-        for trial in case["trials"]:
+        for trial in all_trials:
             for name in trial_failures(trial):
                 counts[name] = counts.get(name, 0) + 1
         if counts:
-            n = len(case["trials"])
+            n = len(all_trials)
             detail = ", ".join(f"{name} ({k}/{n})" for name, k in counts.items())
             failing.append(f"- {case['id']}: {detail}")
     if failing:
@@ -751,7 +754,10 @@ def main(argv: list[str] | None = None) -> int:
         # trial of every attempt.
         max_attempts = 1 + max(0, args.retries) if suite == "regression" else 1
         trials: list[dict] = []
+        earlier_attempts: list[list[dict]] = []
         for attempt in range(1, max_attempts + 1):
+            if trials:
+                earlier_attempts.append(trials)
             trials = []
             for i in range(trials_n):
                 record = run_trial(skill, case, args, known)
@@ -781,6 +787,7 @@ def main(argv: list[str] | None = None) -> int:
             "tier": tier,
             "should_trigger": case.get("should_trigger", True),
             "trials": trials,
+            "earlier_attempts": earlier_attempts,
             "passed": passed,
             "attempts": attempt,
             "flaky": flaky,
