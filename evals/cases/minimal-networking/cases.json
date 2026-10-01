@@ -306,7 +306,7 @@
     "expected_checks": [
       { "name": "response_matches", "args": { "pattern": "absolute.?form|(full|whole|entire|complete)\\s+(URI|URL)|URI\\s+as\\s+the\\s+path|as\\s+the\\s+path" } },
       { "name": "response_matches", "args": { "pattern": "502" } },
-      { "name": "response_not_matches", "args": { "pattern": "(routing|routed|proxy)[^\\n.;:]{0,30}(to the )?wrong session" } },
+      { "name": "response_not_matches", "args": { "pattern": "(?:^|[.!?;,:]\\s*)(?!(?:[^.!?;,:\\n]|[.!?](?=\\S))*(?:\\b(?:neither|nor|no|not|never|nothing)\\b|n't\\b))(?:[^.!?;,:\\n]|[.!?](?=\\S))*?\\b(?:routing|routed|proxy)\\b[^.!?;,:\\n]{0,30}?wrong session" } },
       "docs_urls_valid"
     ],
     "functional_asserts": []
