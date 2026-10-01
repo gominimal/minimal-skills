@@ -171,14 +171,16 @@ skills absent nearly every case fails, so retries or trials would multiply an
 already mostly-failing run by their count.
 
 A case that passes only on a retry, or with any failed trial, is reported as
-`flaky` (in the JSON report and listed in the markdown summary). The summary
-also lists, for every case with a failed trial, which checks, asserts,
-trigger expectation or outcome (`timeout`, `max_turns`, ...) failed and in
-how many of its trials, counted across every attempt. In the JSON report a
-case's `trials` holds its final attempt and `earlier_attempts` the trials of
-each failed attempt before it, oldest first. That is not a build failure, but it marks
-an assertion or prompt that is sensitive to nondeterminism and should be
-tightened rather than left to the retry budget.
+`flaky` (in the JSON report and listed in the markdown summary). A flaky
+case is not a build failure, but it marks an assertion or prompt that is
+sensitive to nondeterminism and should be tightened rather than left to the
+retry budget.
+
+The summary also lists, for every case with a failed trial, which checks,
+asserts, trigger expectation or outcome (`timeout`, `max_turns`, ...) failed
+and in how many of its trials, counted across every attempt. In the JSON
+report a case's `trials` holds its final attempt and `earlier_attempts` the
+trials of each failed attempt before it, oldest first.
 
 Infra errors are not verdicts: a claude invocation that itself fails (no
 events, an error result, or nonzero exit with no result event; rate limits
