@@ -118,5 +118,46 @@ class ResultClassificationTest(unittest.TestCase):
         self.assertIn("API Error: 529 overloaded", detail)
 
 
+def _trial(passed: bool, checks: dict | None = None, **extra) -> dict:
+    return {"passed": passed, "trigger_ok": True, "checks": checks or {},
+            "asserts": [], **extra}
+
+
+class CasePassTest(unittest.TestCase):
+    def test_regression_passes_on_a_strict_majority_of_trials(self) -> None:
+        self.assertTrue(runner.case_pass("regression", [_trial(True)] * 2 + [_trial(False)]))
+        self.assertFalse(runner.case_pass("regression", [_trial(True)] + [_trial(False)] * 2))
+        self.assertTrue(runner.case_pass("regression", [_trial(True)]))
+        self.assertFalse(runner.case_pass("regression", [_trial(False)]))
+        self.assertFalse(runner.case_pass("regression", [_trial(True), _trial(False)]))
+
+    def test_capability_still_passes_at_half(self) -> None:
+        self.assertTrue(runner.case_pass("capability", [_trial(True), _trial(False)]))
+
+
+class SummaryTest(unittest.TestCase):
+    def test_summary_counts_each_failing_check_across_trials(self) -> None:
+        case = {
+            "id": "fixture-001", "skill": "minimal-config", "suite": "regression",
+            "passed": True, "flaky": True, "attempts": 1,
+            "trials": [
+                _trial(True, {"response_matches": True}),
+                _trial(False, {"response_matches": False}),
+                _trial(False, {"response_matches": False}, reason="max_turns"),
+            ],
+        }
+        summary = runner.render_summary(
+            [case], {"regression_pass_rate": 1.0, "capability_pass_rate": None}
+        )
+        self.assertIn("**Flaky (1):** fixture-001", summary)
+        self.assertIn("- fixture-001: response_matches (2/3), max_turns (1/3)", summary)
+
+    def test_trial_failures_names_trigger_and_asserts(self) -> None:
+        trial = _trial(False, asserts=[{"command": "min check", "ok": False}],
+                       trigger_ok=False)
+        self.assertEqual(runner.trial_failures(trial), ["assert `min check`", "trigger"])
+        self.assertEqual(runner.trial_failures(_trial(True)), [])
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -149,18 +149,20 @@ skill.
 
 Pass rules: trial passes if trigger expectation holds and all
 `expected_checks` (and `functional_asserts`) pass. Regression case passes
-only if ALL trials pass; capability case if >=50% of trials pass. Exit code
-is nonzero iff any regression case fails.
+if a strict majority of its trials pass (2 of 3; 1 of 1); capability case if
+>=50% of trials pass. Exit code is nonzero iff any regression case fails.
 
 A regression case that fails is retried as a whole, `--retries` times (default
 2, so 3 attempts), and passes if any attempt passes. This absorbs model
 nondeterminism without weakening the gate: a genuinely broken case fails every
 attempt, and only failures cost anything, so a green suite never retries.
-Do NOT reach for more `--trials` instead. Under the all-trials-must-pass rule
-that makes a flaky case fail *more* often, and with ~70 regression cases the
-per-case failure probabilities compound: at 99% each, an all-green run is
-roughly a coin flip. Retrying failures is what keeps the gate both strict and
-achievable.
+Regression used to require ALL trials. With ~80 regression cases the
+per-case failure probabilities compound, and retries did not save it: a check
+that rejects one correct answer in three fails a 3-trial attempt about 70% of
+the time, so all three attempts fail about a third of the time. From
+2026-09-24 to 10-01 that failed the nightly every night, on a different case
+each night. The majority rule still fails a broken case, which fails every
+trial.
 
 `--without-skill` never retries, and runs one trial per case whatever
 `--trials` or the case says: the obsolescence canary asks whether the bare
@@ -168,8 +170,11 @@ model passes, not whether it can pass on its best attempt, and with the
 skills absent nearly every case fails, so retries or trials would multiply an
 already mostly-failing run by their count.
 
-A case that passes only on a retry is reported as `flaky` (in the JSON report
-and listed in the markdown summary). That is not a build failure, but it marks
+A case that passes only on a retry, or with any failed trial, is reported as
+`flaky` (in the JSON report and listed in the markdown summary). The summary
+also lists, for every case with a failed trial, which checks, asserts,
+trigger expectation or outcome (`timeout`, `max_turns`, ...) failed and in
+how many of its trials. That is not a build failure, but it marks
 an assertion or prompt that is sensitive to nondeterminism and should be
 tightened rather than left to the retry budget.
 
