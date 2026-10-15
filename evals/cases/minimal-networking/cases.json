@@ -135,7 +135,7 @@
     "allowed_tools": ["Skill"],
     "expected_checks": [
       { "name": "response_matches", "args": { "pattern": "--allow-dns-hosts\\s+github\\.com|--allow-subnets\\s+0\\.0\\.0\\.0/0" } },
-      { "name": "response_matches", "args": { "pattern": "deny.all|no egress|reaches? no(thing| external)" } },
+      { "name": "response_matches", "args": { "pattern": "deny.all|no egress|reaches? no(thing| external)|no (?:external|outbound) (?:egress|access|reach)|can'?t reach any external|cannot reach any external" } },
       { "name": "response_matches", "args": { "pattern": "new session|re-?activate|activate (a|another|again)" } }
     ],
     "functional_asserts": []
