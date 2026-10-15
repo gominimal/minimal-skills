@@ -91,7 +91,7 @@
       {
         "name": "response_not_matches",
         "args": {
-          "pattern": "(?:^|[.!?;,:]\\s*)(?!(?:[^.!?;,:\\n]|[.!?](?=\\S))*(?:\\b(?:neither|nor|no|not|never|old|gone|removed|former|anymore|longer)\\b|n't\\b))(?:[^.!?;,:\\n]|[.!?](?=\\S))*?NameMismatch"
+          "pattern": "(?:^|[.!?;,:]\\s*)(?!(?:[^.!?;,:\\n]|[.!?](?=\\S))*(?:\\b(?:neither|nor|no|not|never)\\b|n't\\b))(?:[^.!?;,:\\n]|[.!?](?=\\S))*?(?<!\\bold )(?<!\\bold `)(?<!\\bformer )(?<!\\bformer `)NameMismatch(?!`?(?:\\s+(?:error|failure))?\\s+(?:is|was|has been|have been)\\s+(?:gone|removed|dropped))"
         }
       },
       "docs_urls_valid"
