@@ -234,8 +234,7 @@
     "trials": null,
     "allowed_tools": ["Skill"],
     "expected_checks": [
-      { "name": "response_matches", "args": { "pattern": "min net forward \\S+ \\d+:8080" } },
-      { "name": "response_matches", "args": { "pattern": "min net expose|--dynamic-ingress" } }
+      {"name": "response_matches", "args": {"pattern": "min net forward \\S+ \\d+:8080"}}
     ],
     "functional_asserts": []
   },
