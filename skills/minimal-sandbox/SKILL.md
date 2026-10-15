@@ -28,6 +28,9 @@ Before running a `min` command, resolve it from these two sources:
 Never guess a verb. If you have no shell in this context and cannot check
 first, say which command you would resolve and ask the user to run bare
 `min`, rather than emitting a plausible-looking command that may not exist.
+Bare `min` can list verbs the reference page does not yet, such as
+`min net expose <port>` (publish a port from inside an `own_ip` session whose
+host allowed dynamic ingress); when it does, trust the running helper.
 
 ## Where to read, by what you are doing
 
@@ -62,6 +65,11 @@ page above).
   ad hoc works for you and fails for everyone else.
 - Interactive tasks cannot run from inside a sandbox. That is a structural
   limit, not a misconfiguration. Ask the user to run the task on the host.
+- `host.min.internal` is the host machine and `<peer>.min.internal` another
+  session; `127.0.0.1` is this sandbox's own loopback. Whether a destination
+  answers depends on the session's network mode and egress rules, set on the
+  host at activation (minimal-networking). A refused or timed-out connection
+  to the outside is usually that policy, not a broken service.
 - Session lifecycle, project scaffolding, diagnostics bundles, loadouts, and
   the whole `mip` CLI are host-side tools, absent in here. When one is
   needed, say so and let the user run it on the host; do not retry it in the

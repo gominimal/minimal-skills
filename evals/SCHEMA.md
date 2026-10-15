@@ -33,9 +33,9 @@ Unknown `/docs/` pages return real 404s, so liveness checks are meaningful.
 - Body: direct imperative directives ("Always pass `--no-prompt` in
   scripts"), not passive notes. Under ~150 lines. Link a docs URL instead of
   restating anything the public docs cover. No em-dashes.
-- The `minimal-networking` skill is the one exception to link-first: its
-  surface has no public docs, so it carries inline knowledge and its
-  description must say it is experimental and subject to change.
+- Every skill is link-first, `minimal-networking` included since 0.7.0 (the
+  cli-min and tasks references document its surface). Inline text is for
+  behaviour the docs omit or contradict, verified against a named release.
 
 ## Case dataset
 
@@ -105,12 +105,10 @@ Named (no args):
 | `pins_upstream` | any emitted `minimal.toml` has an `[upstream]` with `locked_commit` |
 | `mip_check_suggested` | response suggests `mip check` (or in-session `min check`, the macOS path) to validate config |
 | `min_bug_suggested` | response suggests `min bug` for diagnostics |
-| `no_hidden_flag_leak` | response does NOT recommend `--network` or `--ingress` (use on setup/config cases; networking cases simply omit it) |
+| `no_hidden_flag_leak` | response does NOT recommend `--network` or `--ingress` (use on setup/config cases, where volunteering a network mode is scope creep; networking cases simply omit it) |
 | `no_host_package_manager` | no command line invokes a host package-manager install (apt/apk/dnf/yum/brew install, system pip install, global npm install, cargo install), including forms carrying options such as `apt-get -y install` |
 | `routes_to_sandbox_reference` | response resolves the in-sandbox command surface from a live source: run bare `min`, cite the sandbox-operations reference, or explicitly decline to guess a verb when no shell is available to check with. Prefer this over asserting specific `min` syntax, which changes between daemon releases |
-| `no_host_only_commands` | response does NOT mention host-only Minimal commands (`min session/init/ls/stop/bug/loadout/update`, any `mip` invocation including `mip --help`); blunt whole-text scan, use only on cases where a host command is never warranted. Citing the `cli-mip` reference URL is not an invocation and does not fail |
-| `correct_proxy_port` | networking answers use port 7654 for the routing proxy |
-| `host_alias_ip_correct` | response gives `100.64.255.254` for reaching the host from inside a session |
+| `no_host_only_commands` | response does NOT mention host-only Minimal commands (`min session/init/ls/stop/bug/diag/loadout/update/finalize-install/dash`, `min net forward`, and any `mip` invocation including `mip --help`); the in-sandbox `min net expose` passes. Blunt whole-text scan, use only on cases where a host command is never warranted. Citing the `cli-mip` reference URL is not an invocation and does not fail |
 
 Case authors: use this vocabulary only. A case needing a new named check adds
 it to this table in the same change that implements it in `checks.py`.

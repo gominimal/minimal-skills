@@ -22,9 +22,17 @@ curl --proto "=https" --tlsv1.2 -fsSL https://go.minimal.dev/stable | sh
 ```
 
 For the nightly channel, replace `stable` with `nightly` in the
-`go.minimal.dev` URL. Verify with `min --version`. Upgrade by re-running the
-same command. If the user runs the legacy `minimal` CLI (pre v0.5.0), have
-them re-install with the command above; the installer migrates the old CLI.
+`go.minimal.dev` URL; pass `--version <version>` to the installer for a
+specific release. Verify with `min --version`. Upgrade by re-running the same
+command. If the user runs the legacy `minimal` CLI (pre v0.5.0), have them
+re-install with the command above; the installer migrates the old CLI.
+
+The installer never asks for root. The one step that needs it is
+`min finalize-install`, which runs every privileged item the machine still
+lacks in one `sudo` call; until it runs, Minimal works and session names
+resolve only through the proxy (minimal-networking). `--show` lists what is
+missing and runs nothing, `--show --script` prints the script, `--undo`
+removes it all. Details on the cli-min reference above.
 
 ## Onboard a project
 
@@ -54,10 +62,11 @@ session sees the network. `--provider` is a global flag, accepted on every
 subcommand.
 
 - `local-minimald` (the default) runs minimald natively on the host. Sessions
-  share the host's network namespace under the default `--network host-net`;
-  `--network own-ip` still isolates a session into its own namespace.
-- `local-minvmd` runs minimald inside the minvmd microVM, behind gvproxy —
-  the same topology macOS uses.
+  share the host's network namespace under the default `--network host_ip`;
+  `--network own_ip` isolates a session into its own namespace.
+- `local-minvmd` runs minimald inside the minvmd microVM, the same topology
+  macOS uses. A stock Linux install with KVM can use it. `--vm <name>` runs a
+  named VM with its own state beside the default one (this provider only).
 
 macOS has no choice to make: minvmd is the only backend there, so `--provider`
 has no effect.
@@ -72,9 +81,12 @@ use minimal-networking.
 
 - `min ls` lists sessions (alias of `min session list`); it is scoped to one
   provider, see above.
-- `min session attach [SESSION]` re-enters a session by name or id; with no
+- `min session attach [SESSION]` re-enters a session by name, id, or a unique
+  id prefix (`exec`, `run`, `policy` and `destroy` accept the same); with no
   argument it resolves from the current directory. Exiting the shell detaches;
-  the session keeps running.
+  the session keeps running, and it keeps running when the terminal or
+  connection goes away. When the daemon ends an attach (destroy, another
+  attach, shutdown) it prints a one-line reason and exits 254.
 - Detach without exiting with the chord the attach banner prints, and
   rebind its leader under `[session-keys]` in `<config>/minimal/config.toml`:
   https://minimal.dev/docs/reference/loadouts
@@ -83,16 +95,21 @@ use minimal-networking.
   under `[session.vars]` plus the `fish` package opens fish on attach.
 - `min session hooks <SESSION>` lists the activation hooks the session
   composed, attributed to the project or loadout each came from.
-- `min session rename <SESSION> <NEW_NAME>` renames a session.
+- `min session rename <SESSION> <NEW_NAME>` renames a session. Names (also
+  `--name` at activation) must be valid hostnames: letters, digits and hyphens,
+  case-insensitive; `host`, `local`, `localhost` and `minimald` are reserved.
+  Every session is reachable as `<name>.min.internal` (minimal-networking).
 - `min session exec <SESSION> <COMMAND>...` runs a one-off command in an
   existing session, non-interactively, with the session's packages on PATH.
+  A command that does not exist exits 127 with `command not found`.
 - `min session run <SESSION> <TASK>` runs a task declared in the session
   project's `minimal.toml` inside that session. It is not the in-session
   equivalent of `min task run` — see the env-composition trap below.
 - `min session destroy <SESSION>` removes one session;
   `min session destroy --all` removes every session (`-f` skips confirmation).
 - `min stop` shuts down the daemon. Sessions survive it and are re-hosted by
-  the next `min` command.
+  the next `min` command. `min stop --force` also stops a VM whose daemon no
+  longer answers; unflushed data in the VM can be lost.
 
 For the in-sandbox `min` helper commands available inside a session, link
 https://minimal.dev/docs/reference/sandbox-operations
@@ -154,10 +171,10 @@ https://minimal.dev/docs/reference/sandbox-operations
   `env_vars.X = { inherit = true }` declaration resolves in the DAEMON's
   environment, failing with `inheriting environment variable 'X':
   environment variable not found` even when `X` is exported in the shell that
-  typed the command. `min task run` resolves the same declaration on the
-  client and works. Until this is fixed, carry secrets with `min task run`
-  (task sandbox) or `[session.vars]` at activation — never
-  `min session run`.
+  typed the command (reproduced again on 0.7.0-rc2). `min task run` resolves
+  the same declaration on the client and works. Until this is fixed, carry
+  secrets with `min task run` (task sandbox) or `[session.vars]` at
+  activation, never `min session run`.
 - Commits made in a session's workspace come back to the host checkout with
   `git push min://<session>`, run from inside the session.
 

@@ -44,6 +44,13 @@ These are policy, not schema, and the reference will not tell you them:
 - **Profiles have been removed from Minimal.** Do not add a `profile` key, a
   `profiles/` directory, or a `--profiles` flag to anything, and treat any
   such leftovers in an existing config as stale.
+- **`[harness]` no longer loads (0.7.0).** The build section is `[stack]`; a
+  file that still says `[harness]` fails to load and names the rename. Rename
+  the table, nothing else changes.
+- **A task has no network setting.** It takes the network mode and egress
+  rules of the session that runs it; `min task run` composes a default
+  `host_ip` session. Do not invent a `network` key:
+  https://minimal.dev/docs/reference/tasks
 - **Read an unknown-field warning as a nesting error first.** The
   `help: do you need to update to a newer version of minimal?` line appended
   to it is a blanket suffix; upgrading usually fixes nothing. Check the key's

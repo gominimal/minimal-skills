@@ -8,10 +8,9 @@
     "trials": null,
     "allowed_tools": ["Skill"],
     "expected_checks": [
-      "correct_proxy_port",
-      { "name": "response_matches", "args": { "pattern": "proxy-server=.?http://127\\.0\\.0\\.1:7654|\\b(?:browser|chrome|firefox|safari)\\b[^\\n]{0,60}\\bproxy\\b[^\\n]{0,20}127\\.0\\.0\\.1:7654" } },
-      { "name": "response_matches", "args": { "pattern": "\\.local\\.min\\.internal" } },
-      { "name": "response_not_matches", "args": { "pattern": "127\\.0\\.0\\.1:7654[^\\n]{0,40}\\b(?:or|with)\\b\\W{0,3}100\\.64\\.255\\.254:7654(?![^\\n]{0,20}\\b(?:from|inside|in|within)\\b[^\\n]{0,15}\\bsession)|100\\.64\\.255\\.254:7654\\W{0,3}\\s+as\\s+(?:the\\s+)?(?:browser'?s?\\s+)?proxy|proxy-server=.?(?:http://)?100\\.64\\.255\\.254" } }
+      { "name": "response_matches", "args": { "pattern": "min net forward" } },
+      { "name": "response_not_matches", "args": { "pattern": "\\.local\\.min\\.internal|ssh-forward" } },
+      "docs_urls_valid"
     ],
     "functional_asserts": []
   },
@@ -24,52 +23,49 @@
     "trials": null,
     "allowed_tools": ["Skill"],
     "expected_checks": [
-      "correct_proxy_port",
-      { "name": "response_matches", "args": { "pattern": "(-x|--proxy)\\s+.?http://127\\.0\\.0\\.1:7654" } },
-      { "name": "response_matches", "args": { "pattern": "web\\.local\\.min\\.internal" } }
+      { "name": "response_matches", "args": { "pattern": "min net forward web \\d+:\\d+|web\\.min\\.internal" } },
+      { "name": "response_not_matches", "args": { "pattern": "\\.local\\.min\\.internal" } }
     ],
     "functional_asserts": []
   },
   {
     "id": "net-003",
-    "prompt": "my two default minimal sessions on the same linux host need to reach each other by session name, not by port number. neither uses own-ip.",
+    "prompt": "my two default minimal sessions on the same host need to reach each other by session name, not by port number. neither uses own_ip.",
     "should_trigger": true,
     "tier": "text",
     "suite": "regression",
     "trials": null,
     "allowed_tools": ["Skill"],
     "expected_checks": [
-      { "name": "correct_proxy_port", "args": { "host": "loopback" } },
-      { "name": "response_matches", "args": { "pattern": "HTTP_PROXY=http://127\\.0\\.0\\.1:7654" } },
-      { "name": "response_matches", "args": { "pattern": "\\.local\\.min\\.internal" } }
+      { "name": "response_matches", "args": { "pattern": "<?\\w*>?\\.min\\.internal" } },
+      { "name": "response_not_matches", "args": { "pattern": "\\.local\\.min\\.internal|100\\.64\\.255\\.254:7654" } }
     ],
     "functional_asserts": []
   },
   {
     "id": "net-004",
-    "prompt": "from inside the session I need to hit a service on my mac's localhost:8787",
+    "prompt": "from inside my default minimal session I need to hit a service on my mac's localhost:8787",
     "should_trigger": true,
     "tier": "text",
     "suite": "regression",
     "trials": null,
     "allowed_tools": ["Skill"],
     "expected_checks": [
-      "host_alias_ip_correct",
-      { "name": "response_matches", "args": { "pattern": "100\\.64\\.255\\.254:8787" } }
+      { "name": "response_matches", "args": { "pattern": "host\\.min\\.internal:8787" } }
     ],
     "functional_asserts": []
   },
   {
     "id": "net-005",
-    "prompt": "give me a plain localhost port for my session without proxy config",
+    "prompt": "give me a plain localhost port on my mac for the server in my minimal session, no proxy config",
     "should_trigger": true,
     "tier": "text",
     "suite": "regression",
     "trials": null,
     "allowed_tools": ["Skill"],
     "expected_checks": [
-      { "name": "response_matches", "args": { "pattern": "--network\\s+own-ip" } },
-      { "name": "response_matches", "args": { "pattern": "--ingress\\s+(\\d+:\\d+|EXT:INT)" } }
+      { "name": "response_matches", "args": { "pattern": "min net forward|--ingress\\s+\\d+:\\d+" } },
+      { "name": "response_not_matches", "args": { "pattern": "--network\\s+own-ip|host-net|no-net" } }
     ],
     "functional_asserts": []
   },
@@ -83,62 +79,64 @@
     "allowed_tools": ["Skill"],
     "expected_checks": [
       { "name": "response_matches", "args": { "pattern": "(cloudflared|ngrok|tunnel)" } },
-      { "name": "response_matches", "args": { "pattern": "(loopback|127\\.0\\.0\\.1)" } }
+      { "name": "response_matches", "args": { "pattern": "min net forward|--ingress" } }
     ],
     "functional_asserts": []
   },
   {
     "id": "net-007",
-    "prompt": "nothing loads through the minimal preview proxy on my mac, what should I check first?",
+    "prompt": "web.min.internal doesn't resolve in my browser on my mac even though the minimal session is running. what gives?",
     "should_trigger": true,
     "tier": "text",
     "suite": "regression",
     "trials": null,
     "allowed_tools": ["Skill"],
     "expected_checks": [
-      { "name": "response_matches", "args": { "pattern": "lsof\\s+-nP\\s+-iTCP:7654\\s+-sTCP:LISTEN" } }
+      { "name": "response_matches", "args": { "pattern": "min finalize-install" } },
+      { "name": "response_matches", "args": { "pattern": "proxy" } },
+      "docs_urls_valid"
     ],
     "functional_asserts": []
   },
   {
     "id": "net-008",
-    "prompt": "I renamed my minimal session to api, what preview URL do I use now?",
+    "prompt": "I renamed my minimal session to api, what hostname do I use for it now?",
     "should_trigger": true,
     "tier": "text",
     "suite": "regression",
     "trials": null,
     "allowed_tools": ["Skill"],
     "expected_checks": [
-      { "name": "response_matches", "args": { "pattern": "api\\.local\\.min\\.internal" } }
+      { "name": "response_matches", "args": { "pattern": "api\\.min\\.internal" } },
+      { "name": "response_not_matches", "args": { "pattern": "api\\.local\\.min\\.internal" } }
     ],
     "functional_asserts": []
   },
   {
     "id": "net-009",
-    "prompt": "does vite HMR work through the minimal session preview proxy?",
+    "prompt": "does vite HMR work through min net forward or the minimal session name route?",
     "should_trigger": true,
     "tier": "text",
     "suite": "capability",
     "trials": null,
     "allowed_tools": ["Skill"],
     "expected_checks": [
-      { "name": "response_matches", "args": { "pattern": "websocket" } }
+      { "name": "response_matches", "args": { "pattern": "websocket|min net forward" } }
     ],
     "functional_asserts": []
   },
   {
     "id": "net-010",
-    "prompt": "the minimal preview proxy returns 502 Bad Gateway for my session hostname. what does that tell me, and will a raw socat probe hang on it?",
+    "prompt": "I activated my minimal session with --network own_ip and now curl to github.com inside it fails with could not resolve host. is DNS broken?",
     "should_trigger": true,
     "tier": "text",
     "suite": "regression",
     "trials": null,
     "allowed_tools": ["Skill"],
     "expected_checks": [
-      { "name": "response_matches", "args": { "pattern": "502" } },
-      { "name": "response_matches", "args": { "pattern": "host\\s?name|session name" } },
-      { "name": "response_matches", "args": { "pattern": "clos(e|es|ed|ing)" } },
-      { "name": "response_not_matches", "args": { "pattern": "without closing the socket|holds the connection open" } }
+      { "name": "response_matches", "args": { "pattern": "--allow-dns-hosts\\s+github\\.com|--allow-subnets\\s+0\\.0\\.0\\.0/0" } },
+      { "name": "response_matches", "args": { "pattern": "deny.all|no egress|reaches? no(thing| external)|no (?:external|outbound) (?:egress|access|reach)|can'?t reach any external|cannot reach any external" } },
+      { "name": "response_matches", "args": { "pattern": "new session|re-?activate|activate (a|another|again)" } }
     ],
     "functional_asserts": []
   },
@@ -200,113 +198,100 @@
     "functional_asserts": []
   },
   {
-    "id": "net-019",
-    "prompt": "my minimal session was activated with --network own-ip and needs to reach another session by hostname. which proxy address do i point HTTP_PROXY at?",
-    "should_trigger": true,
-    "tier": "text",
-    "suite": "regression",
-    "trials": null,
-    "allowed_tools": ["Skill"],
-    "expected_checks": [
-      { "name": "response_matches", "args": { "pattern": "100\\.64\\.255\\.254:7654" } },
-      { "name": "response_matches", "args": { "pattern": "\\.local\\.min\\.internal" } }
-    ],
-    "functional_asserts": []
-  },
-  {
-    "id": "net-020",
-    "prompt": "i asked the minimal proxy for a session hostname that does not exist and got a 502. is my connection stuck?",
-    "should_trigger": true,
-    "tier": "functional",
-    "suite": "regression",
-    "trials": null,
-    "allowed_tools": ["Skill"],
-    "assert_timeout_s": 120,
-    "expected_checks": [
-      { "name": "response_matches", "args": { "pattern": "502" } },
-      { "name": "response_matches", "args": { "pattern": "clos(e|es|ed|ing)" } },
-      { "name": "response_not_matches", "args": { "pattern": "without closing the socket|holds the connection open" } }
-    ],
-    "functional_asserts": [
-      "min ls >/dev/null 2>&1 || true; curl -sS -o /dev/null -D- -m 20 -x http://127.0.0.1:7654 http://nonexistent-eval-probe.local.min.internal:1/ | tee /tmp/eval-502-headers | grep -qiE '^HTTP/1\\.[01] 502'",
-      "grep -qiE '^Connection:[[:space:]]*close' /tmp/eval-502-headers",
-      "curl -sS -o /dev/null -m 15 -x http://127.0.0.1:7654 http://nonexistent-eval-probe.local.min.internal:1/"
-    ]
-  },
-  {
     "id": "net-016",
-    "prompt": "i'm on linux and my minimal session can't reach 100.64.255.254 to hit a server on my host. what's wrong?",
+    "prompt": "min ssh-forward says it was removed. how do I get port 3000 from my minimal session onto my laptop now?",
     "should_trigger": true,
     "tier": "text",
     "suite": "regression",
     "trials": null,
     "allowed_tools": ["Skill"],
     "expected_checks": [
-      { "name": "response_matches", "args": { "pattern": "local-minimald|default provider|host-net" } },
-      { "name": "response_matches", "args": { "pattern": "127\\.0\\.0\\.1" } },
-      { "name": "response_matches", "args": { "pattern": "namespace" } }
+      { "name": "response_matches", "args": { "pattern": "min net forward \\S+ \\d+:3000" } }
     ],
     "functional_asserts": []
   },
   {
     "id": "net-018",
-    "prompt": "i'm in an own-ip minimal session and HTTP_PROXY=http://127.0.0.1:7654 can't reach my other session by hostname. is session-to-session routing just unavailable from own-ip?",
+    "prompt": "I want a minimal session that can only talk to github.com and nothing else on the internet. which flags?",
     "should_trigger": true,
     "tier": "text",
     "suite": "regression",
     "trials": null,
     "allowed_tools": ["Skill"],
     "expected_checks": [
-      { "name": "response_matches", "args": { "pattern": "100\\.64\\.255\\.254:7654" } },
-      { "name": "response_not_matches", "args": { "pattern": "(?:session-to-session|peer|hostname)(?:(?!(?:n't|not)\\s+unavailable)[^\\n.,;:—–-]){0,28}(?:unavailable|not available|not possible|not supported|unsupported|does not work|doesn't work|impossible|cannot|can't|can not|won't|will not|isn't possible|is not possible|no longer works)(?!\\s+reach(?:es)?\\s+(?:an?\\s+|the\\s+)?own-ip)[^\\n.,;:—–-]{0,28}(?<!peer is )(?<!peer is also )(?<!peer is an )(?<!peer is also an )own-ip(?!\\s+peers?\\b)" } },
-      { "name": "response_not_matches", "args": { "pattern": "(?<!peer is )(?<!peer is also )(?<!peer is an )(?<!peer is also an )own-ip(?:(?!\\s+peers?\\b)[^\\n.;:]{0,40}(?:session-to-session|peer|hostname)(?:(?!(?:n't|not)\\s+unavailable)[^\\n.,;:—–-]){0,28}(?:unavailable|not available|not possible|not supported|unsupported|does not work|doesn't work|impossible|cannot|can't|can not|won't|will not|isn't possible|is not possible|no longer works)|\\s+peers?\\b(?:(?!(?:n't|not)\\s+unavailable)[^\\n.,;:—–-]){0,28}(?:unavailable|not available|not possible|not supported|unsupported|does not work|doesn't work|impossible|cannot|can't|can not|won't|will not|isn't possible|is not possible|no longer works)(?!\\s+(?:be\\s+)?reach))" } },
-      { "name": "response_not_matches", "args": { "pattern": "(?:no|cannot|can't|can not)[^\\n.,;:—–-]{0,28}(?:session-to-session|peer|hostname)[^\\n.,;:—–-]{0,28}(?:routing|traffic)" } }
+      { "name": "response_matches", "args": { "pattern": "--network\\s+own_ip" } },
+      { "name": "response_matches", "args": { "pattern": "--allow-dns-hosts\\s+github\\.com" } },
+      { "name": "response_not_matches", "args": { "pattern": "--network\\s+host_ip[^\\n]{0,80}--allow-dns-hosts" } }
     ],
     "functional_asserts": []
   },
   {
-    "id": "net-017",
-    "prompt": "is the 100.64.255.254 host alias a macos-only thing, or can a linux session use it too?",
+    "id": "net-019",
+    "prompt": "my minimal session runs with --network own_ip. a tool inside it starts a server on port 8080 and I want it on my mac without re-activating. options?",
     "should_trigger": true,
     "tier": "text",
     "suite": "regression",
     "trials": null,
     "allowed_tools": ["Skill"],
     "expected_checks": [
-      { "name": "response_matches", "args": { "pattern": "local-minvmd" } },
-      { "name": "response_matches", "args": { "pattern": "local-minimald|host-net|namespace" } },
-      { "name": "response_not_matches", "args": { "pattern": "no equivalent on linux|not available on linux|unavailable on linux" } }
+      {"name": "response_matches", "args": {"pattern": "min net forward \\S+ \\d+:8080"}}
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "net-020",
+    "prompt": "from the host, how do I reach port 4321 of a minimal session that was activated with --network own_ip --ingress 18431:4321? the server inside binds 127.0.0.1.",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      { "name": "response_matches", "args": { "pattern": "0\\.0\\.0\\.0|--host|all (addresses|interfaces)|min net forward" } },
+      { "name": "response_matches", "args": { "pattern": "127\\.0\\.0\\.1:18431|localhost:18431|min net forward" } }
     ],
     "functional_asserts": []
   },
   {
     "id": "net-021",
-    "prompt": "minimald warned at startup that it couldn't publish port 7654 because the address was in use. I killed the process that had it. Session hostnames still don't resolve. What now?",
+    "prompt": "can my own_ip minimal session reach a dev server on my mac at host.min.internal:8787? it just times out.",
     "should_trigger": true,
     "tier": "text",
-    "suite": "regression",
+    "suite": "capability",
     "trials": null,
     "allowed_tools": ["Skill"],
     "expected_checks": [
-      { "name": "response_matches", "args": { "pattern": "min stop" } },
-      { "name": "response_matches", "args": { "pattern": "\\b(does\\s+not|doesn'?t|won'?t|will\\s+not|never)\\s+(make\\s+(the|an?)\\s+(\\S+\\s+)?daemon\\s+)?(retr(y|ies)|re-?b(i|ou)nd|re-?publish|re-?attempt)" } },
-      { "name": "response_matches", "args": { "pattern": "respawn|restart|next .{0,30}min|min ls|start(s|ed)? (it|the daemon|a new daemon|again)" } },
-      "docs_urls_valid"
+      {"name": "response_matches", "args": {"pattern": "host_ip"}}
     ],
     "functional_asserts": []
   },
   {
     "id": "net-022",
-    "prompt": "I'm checking whether the minimal proxy routes to my session. I started `python3 -m http.server` in two sessions with different files in each, and through http://127.0.0.1:7654 both session hostnames return the same 404. Is the proxy routing to the wrong session?",
+    "prompt": "i asked min net forward web 18080:4321 for my minimal session and curl localhost:18080 says connection reset by peer. is the forward broken?",
+    "should_trigger": true,
+    "tier": "functional",
+    "suite": "capability",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "assert_timeout_s": 120,
+    "expected_checks": [
+      { "name": "response_matches", "args": { "pattern": "listen|nothing.{0,30}(on|at) (port )?4321|not running" } }
+    ],
+    "functional_asserts": [
+      "min net forward --help | grep -q 'LOCAL:PORT'"
+    ]
+  },
+  {
+    "id": "net-023",
+    "prompt": "the minimal installer finished and told me to run min finalize-install. what does it do and can I see what it will change before it asks for sudo?",
     "should_trigger": true,
     "tier": "text",
     "suite": "regression",
     "trials": null,
     "allowed_tools": ["Skill"],
     "expected_checks": [
-      { "name": "response_matches", "args": { "pattern": "absolute.?form|(full|whole|entire|complete)\\s+(URI|URL)|URI\\s+as\\s+the\\s+path|as\\s+the\\s+path" } },
-      { "name": "response_matches", "args": { "pattern": "502" } },
-      { "name": "response_not_matches", "args": { "pattern": "(?:^|[.!?;,:]\\s*)(?!(?:[^.!?;,:\\n]|[.!?](?=\\S))*(?:\\b(?:neither|nor|no|not|never|nothing)\\b|n't\\b))(?:[^.!?;,:\\n]|[.!?](?=\\S))*?\\b(?:routing|routed|proxy)\\b[^.!?;,:\\n]{0,30}?wrong session" } },
+      { "name": "response_matches", "args": { "pattern": "min finalize-install --show" } },
+      { "name": "response_matches", "args": { "pattern": "--script|--undo" } },
       "docs_urls_valid"
     ],
     "functional_asserts": []
