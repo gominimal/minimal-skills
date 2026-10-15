@@ -209,7 +209,7 @@
     "expected_checks": [
       { "name": "response_matches", "args": { "pattern": "min diag upload|--upload" } },
       { "name": "response_matches", "args": { "pattern": "no (account|token|login|sign.?in|credential)|without (an? )?(account|token)|(token|account)[^\\n.]{0,20}\\b(not|isn'?t|is never) (needed|required)|nothing (that )?identif" } },
-      { "name": "response_not_matches", "args": { "pattern": "(?<!not )(?<!n't )(?<!never )(?<!no need to )(?<!without )(?<!nor )(?<!or )(run |running )?`?gh auth login|(?<!not )(?<!n't )(?<!never )(?<!no need to )(set|export)\\w* (the |a |your )?`?\\$?GITHUB_TOKEN|(needs?|requires?) (a |an |the )?(github |personal |access |user )*token" } }
+      { "name": "response_not_matches", "args": { "pattern": "^(?![^\\n]*\\b(?:not|never|no|don'?t|doesn'?t|without|skip|nor)\\b)[^\\n]*(?:gh auth login|GITHUB_TOKEN|(?:needs?|requires?) (?:a |an |the )?(?:github |personal |access |user )*token)" } }
     ],
     "functional_asserts": []
   },

@@ -91,9 +91,9 @@ description of your log files.
 
 ### No account, no token
 
-The upload needs no authentication: no account, no token, no login (releases
-before 0.7.0 asked for a GitHub token; this one does not, so skip that
-setup). That is about authentication only: the bundle still carries host facts, log tails
+The upload needs no authentication: no account, no token, no login, and
+nothing to set up first. That is about authentication only: the bundle still
+carries host facts, log tails
 and state listings, and the `--context` text is whatever the user wrote, so
 either can identify a person or project. If the CLI cannot reach the portal,
 the page at https://agents.minimal.farm/diag accepts the file.
