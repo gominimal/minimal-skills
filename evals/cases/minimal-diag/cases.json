@@ -200,14 +200,44 @@
   },
   {
     "id": "diag-016",
-    "prompt": "upload my minimal diag bundle. what do I need to set up first?",
+    "prompt": "upload my minimal diag bundle for a diagnosis. do I need a token or an account first?",
     "should_trigger": true,
     "tier": "text",
     "suite": "regression",
     "trials": null,
     "allowed_tools": ["Skill"],
     "expected_checks": [
-      { "name": "response_matches", "args": { "pattern": "(?i)GITHUB_TOKEN|gh auth" } }
+      { "name": "response_matches", "args": { "pattern": "min diag upload|--upload" } },
+      { "name": "response_matches", "args": { "pattern": "no (account|token|login|sign.?in|credential)|without (an? )?(account|token)|(token|account)[^\\n.]{0,20}\\b(not|isn'?t|is never) (needed|required)|nothing (that )?identif" } },
+      { "name": "response_not_matches", "args": { "pattern": "gh auth login|set\\w* (the |a |your )?GITHUB_TOKEN|export GITHUB_TOKEN|needs? a (github )?(user )?token" } }
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "diag-017",
+    "prompt": "I uploaded a minimal diag bundle with min bug --upload but I'd rather it not sit on the portal. how do I remove it, and how long would it stay otherwise?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      { "name": "response_matches", "args": { "pattern": "min diag delete" } },
+      { "name": "response_matches", "args": { "pattern": "7 days|seven days" } }
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "diag-018",
+    "prompt": "I ran min bug --upload and got a report URL. how long until the automated diagnosis shows up, and should my script poll for it?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      { "name": "response_matches", "args": { "pattern": "sign(s|ed)? in|starts? (the|a) diagnosis|not automatic|someone" } },
+      { "name": "response_not_matches", "args": { "pattern": "poll(ing)? (the|every|it|for)[^\\n]{0,40}(status|JSON|seconds)|/diag/api/" } }
     ],
     "functional_asserts": []
   }

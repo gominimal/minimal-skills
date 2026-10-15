@@ -31,8 +31,8 @@ Or run `/plugin` inside the Claude Code REPL and install `minimal` from the
 | `minimal-sandbox` | Work correctly from inside a sandbox (session or task sandbox): the in-sandbox `min` helper, installing and persisting packages, task limits, what survives where. |
 | `minimal-config` | Author and validate `minimal.toml`: packages, stacks, upstream pinning, `mip check`/`min check`. |
 | `minimal-loadouts` | Personalize sessions with per-developer loadouts: editors, dotfiles, env vars, patches, composition rules. |
-| `minimal-networking` | Session networking: the routing proxy, ingress, and reaching the host. Experimental. |
-| `minimal-diag` | Diagnose broken sessions and builds: `min bug` support bundles, uploading one for an automated diagnosis with `min diag upload`, logs, common failure modes. |
+| `minimal-networking` | Session networking: `--network` modes, egress rules, `.min.internal` names, publishing and forwarding ports, `min finalize-install`. |
+| `minimal-diag` | Diagnose broken sessions and builds: `min bug` support bundles, uploading one for diagnosis with `min bug --upload` or `min diag upload`, deleting it with `min diag delete`. |
 
 ## Eval pipeline
 
@@ -88,17 +88,27 @@ justfile              local dev-loop recipes
 - Skills link the published docs at `minimal.dev` instead of restating them;
   the URL contract lives in [evals/SCHEMA.md](evals/SCHEMA.md).
 - Behavior claims are checked against a real install, and anything the
-  reference documents is linked rather than restated. The 0.6.0 pass was
-  verified on 2026-09-25 against min 0.6.0 staged from minimal 9b763dd5
-  (macOS arm64). The 0.4.0 pass was verified on 2026-09-03 against min
+  reference documents is linked rather than restated. The 0.7.0 pass was
+  verified on 2026-10-14 against min 0.7.0-rc2 (macOS arm64): network modes,
+  egress defaults, `.min.internal` names, `min net forward`, static and
+  dynamic ingress, `min bug --upload` and `min diag delete`, and the
+  `min session run` environment trap. The 0.6.0 pass was verified on
+  2026-09-25 against min 0.6.0 staged from minimal 9b763dd5 (macOS arm64).
+  The 0.4.0 pass was verified on 2026-09-03 against min
   0.5.4-dev.62.g30a3031d (macOS arm64, minvmd + gvproxy); reference gaps
   found on that pass are filed as
   [#622](https://github.com/gominimal/inbox/issues/622),
   [#623](https://github.com/gominimal/inbox/issues/623) and
   [#624](https://github.com/gominimal/inbox/issues/624) in gominimal/inbox.
-- `minimal-networking` is experimental: its surface has no public docs (that
-  is intentional), so it carries inline knowledge and may change or break
-  without notice.
+- `minimal-networking` is link-first since 0.7.0, when the cli-min and tasks
+  references gained the networking surface. Two places where the running
+  0.7.0-rc2 and the published docs disagree are recorded inline rather than
+  linked: `--dynamic-ingress allow` works on a macOS host, and an `own_ip`
+  session on macOS does not reach `host.min.internal` or the host-side proxy.
+  Filed as
+  [#1093](https://github.com/gominimal/inbox/issues/1093),
+  [#1094](https://github.com/gominimal/inbox/issues/1094) and
+  [#1095](https://github.com/gominimal/inbox/issues/1095) in gominimal/inbox.
 - Sandboxed Claude Code sessions get this content through the
   `claude-code-minimal-plugin` package in `gominimal/pkgs`, which fetches a
   tagged snapshot of this repo and assembles `skills/minimal-sandbox/` plus

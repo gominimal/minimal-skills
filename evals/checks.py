@@ -47,7 +47,7 @@ _HOST_INSTALLER_RE = re.compile(
 # only a hyphen, which keeps the docs slug `.../reference/cli-mip` from
 # reading as an invocation; citing the reference is not running it.
 _HOST_ONLY_MIN_RE = re.compile(
-    r"\bmin\s+(?:session|init|ls|stop|bug|loadout|update)\b|(?<![\w-])mip\b",
+    r"\bmin\s+(?:session|init|ls|stop|bug|diag|loadout|update|net|finalize-install|dash)\b|(?<![\w-])mip\b",
     re.IGNORECASE,
 )
 
@@ -198,7 +198,9 @@ def min_bug_suggested(args: dict, result: Result) -> bool:
 
 
 def no_hidden_flag_leak(args: dict, result: Result) -> bool:
-    """Response does NOT recommend --network or --ingress."""
+    """Response does NOT recommend --network or --ingress. The flags are
+    documented since 0.7.0; the check keeps its name and still guards setup
+    and config answers, where volunteering a network mode is scope creep."""
     return _HIDDEN_FLAG_RE.search(result.response_text) is None
 
 
@@ -254,28 +256,6 @@ def no_host_only_commands(args: dict, result: Result) -> bool:
     return _HOST_ONLY_MIN_RE.search(result.response_text) is None
 
 
-def correct_proxy_port(args: dict, result: Result) -> bool:
-    """Assert the proxy port, and optionally the host it belongs on.
-
-    Bare, this matches the port token alone, which cannot tell
-    127.0.0.1:7654 from 100.64.255.254:7654 — and those are not
-    interchangeable: the loopback form works from a session sharing the host's
-    namespace, the alias form from one with its own. Pass host="loopback" or
-    host="alias" where the topology in the prompt makes one of them the
-    correct answer.
-    """
-    host = args.get("host")
-    if host == "loopback":
-        return re.search(r"\b127\.0\.0\.1:7654\b", result.response_text, FLAGS) is not None
-    if host == "alias":
-        return re.search(r"\b100\.64\.255\.254:7654\b", result.response_text, FLAGS) is not None
-    return re.search(r"\b7654\b", result.response_text, FLAGS) is not None
-
-
-def host_alias_ip_correct(args: dict, result: Result) -> bool:
-    return re.search(r"\b100\.64\.255\.254\b", result.response_text, FLAGS) is not None
-
-
 CHECK_REGISTRY: dict[str, Check] = {
     # parameterized
     "response_matches": response_matches,
@@ -294,6 +274,4 @@ CHECK_REGISTRY: dict[str, Check] = {
     "no_host_package_manager": no_host_package_manager,
     "routes_to_sandbox_reference": routes_to_sandbox_reference,
     "no_host_only_commands": no_host_only_commands,
-    "correct_proxy_port": correct_proxy_port,
-    "host_alias_ip_correct": host_alias_ip_correct,
 }

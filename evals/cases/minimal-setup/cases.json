@@ -364,5 +364,47 @@
       "docs_urls_valid"
     ],
     "functional_asserts": []
+  },
+  {
+    "id": "setup-024",
+    "prompt": "I'm on a stock Ubuntu box with KVM. can minimal run my sessions inside a VM like it does on macOS, and can I run a second VM beside the first?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      { "name": "response_matches", "args": { "pattern": "--provider local-minvmd" } },
+      { "name": "response_matches", "args": { "pattern": "--vm \\S+" } }
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "setup-025",
+    "prompt": "my scripted min session attach exited with code 254 and printed one line about the daemon. what does 254 mean?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "capability",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      { "name": "response_matches", "args": { "pattern": "daemon (ended|closed|terminated)|ended (the|your) attach|destroyed|another (connection|attach)|shut ?down" } },
+      "docs_urls_valid"
+    ],
+    "functional_asserts": []
+  },
+  {
+    "id": "setup-026",
+    "prompt": "min session activate --name my_api fails with invalid session name. why, and what name works?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "regression",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      { "name": "response_matches", "args": { "pattern": "hostname|DNS label|letters, digits" } },
+      { "name": "response_matches", "args": { "pattern": "my-api" } }
+    ],
+    "functional_asserts": []
   }
 ]

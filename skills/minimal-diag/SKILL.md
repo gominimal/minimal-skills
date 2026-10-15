@@ -1,6 +1,6 @@
 ---
 name: minimal-diag
-description: Use when Minimal itself is broken or misbehaving and the user wants to report a bug, collect diagnostics, or send an existing bundle for diagnosis, e.g. Minimal is broken, a min session won't start, the minimald daemon is unreachable, a VM boot hangs, or the user has a minimal-diag bundle to send or upload, and the user mentions Minimal. Do not use for session hostnames or port 7654 not routing (minimal-networking), for a daemon that fails to start only when several commands run at once (minimal-setup), for general debugging of the user's own application, or for bug reports about non-Minimal software.
+description: Use when Minimal itself is broken or misbehaving and the user wants to report a bug, collect diagnostics, or send an existing bundle for diagnosis, e.g. Minimal is broken, a min session won't start, the minimald daemon is unreachable, a VM boot hangs, or the user has a minimal-diag bundle to send or upload, and the user mentions Minimal. Do not use for session names that do not resolve or ports that are not published (minimal-networking), for a daemon that fails to start only when several commands run at once (minimal-setup), for general debugging of the user's own application, or for bug reports about non-Minimal software.
 ---
 
 # minimal-diag
@@ -56,25 +56,21 @@ both steps at once:
 min bug --upload --context "min up hangs at 'booting' and never returns"
 ```
 
-It prints two URLs. One is a page for a person; the other is the same
-diagnosis as JSON, for you:
+The bundle is written to disk first, so a failed upload never costs the
+collection. On success it prints (verified on 0.7.0-rc2):
 
 ```
 Report:  https://agents.minimal.farm/diag/<id>
-Status:  https://agents.minimal.farm/diag/api/diagnoses/<id>
+The bundle is stored for the minimal team for 7 days. It is not diagnosed until someone signs in at the report URL and starts the diagnosis.
+Expires: <date>
+Delete:  min diag delete <id> <token>
 ```
 
-An agent reads an in-flight diagnosis by polling the status URL, which is
-JSON. Watch `state`: it goes `queued` → `running` → one of
-
-- `completed`: `report` holds the markdown, and `verdict` and `confidence`
-  summarise it
-- `failed`: `error` says why
-- `rejected`: the bundle was not something it could diagnose
-
-`step` names what it is doing meanwhile. Poll every 20 seconds or so; a
-diagnosis takes a few minutes. Paste the report URL into the issue you file,
-so whoever picks it up gets the verdict and not just an archive.
+Paste the report URL into the issue you file. The diagnosis is not automatic:
+a member of the Minimal team signs in at the report URL and starts it, so do
+not poll for a verdict. The bundle expires after 7 days; the `Delete:` line
+removes it sooner, and it is the only place the delete token appears, so keep
+it if the user may want the bundle gone.
 
 To send a bundle collected earlier, or one somebody handed you:
 
@@ -83,7 +79,8 @@ min diag upload minimal-diag-20260913T175713Z.tar.zst --context "..."
 ```
 
 `min diag collect` is the same command as `min bug`, under the `<noun> <verb>`
-name; either spelling works.
+name; either spelling works. Full command reference:
+https://minimal.dev/docs/reference/cli-min
 
 ### Always write `--context`
 
@@ -92,38 +89,26 @@ you were trying to do. One sentence saying the command you ran, what you
 expected, and what happened instead is the difference between a verdict and a
 description of your log files.
 
-### The token
+### No account, no token
 
-The upload needs a GitHub **user** token, taken from the first of `--token`,
-`$GITHUB_TOKEN`, `$GH_TOKEN`, then `gh auth token`. On a developer machine
-`gh auth login` has usually already supplied one. The portal asks GitHub once
-which account the token belongs to, counts that account against its quota of
-5 diagnoses a day, and never stores the token.
-
-One trap: the `GITHUB_TOKEN` a GitHub Actions job gets automatically is an
-**app installation token**, not a user token, and the portal refuses it. A
-workflow that uploads needs a personal access token in the environment
-instead. The refusal says which kind it wanted, so read it rather than
-assuming the token expired.
-
-If no rung has a usable token, say so and stop: do not ask the user to paste
-a token into the conversation. Have them run `gh auth login`, or upload
-through the page at https://agents.minimal.farm/diag themselves.
+The upload sends the bundle and the `--context` text and nothing that
+identifies you: no account, no GitHub token, no login. Do not tell a user to
+set `GITHUB_TOKEN` or run `gh auth login` for it. If the CLI cannot reach the
+portal, the page at https://agents.minimal.farm/diag accepts the file.
 
 ### Before you upload
 
 Uploading sends the bundle off the machine, which collecting it does not.
 The archive is the same either way, with secret-shaped values redacted and
 file contents never included, but confirm with the user before uploading a
-bundle from a machine you were not asked to diagnose. Anyone with the report URL can
-read the report.
+bundle from a machine you were not asked to diagnose. Anyone with the report
+URL can read the report.
 
 ## Reporting
 
 A report URL is the useful thing to attach to an issue. When you cannot
 upload, tell users to attach the bundle itself when reporting the issue to the
-Minimal dev team. Full command reference:
-https://minimal.dev/docs/reference/cli-min
+Minimal dev team.
 
 ## Out of scope
 
@@ -131,6 +116,6 @@ Do not root-cause the failure yourself from this skill. Collect the bundle
 and, if the user wants a verdict, upload it. The portal's agent reads the
 bundle against Minimal's own source, which you cannot do from here. For
 deeper setup and session troubleshooting, use the minimal-setup skill.
-Session hostnames not resolving, or minimald warning that it could not
-publish port 7654, is a known networking sharp edge with a documented
-recovery: use the minimal-networking skill.
+A session name that does not resolve, or a port that is not published, is
+networking configuration, not a bug to bundle: use the minimal-networking
+skill.
