@@ -289,6 +289,66 @@ jobs:
           echo "::warning::Docs drift re-baseline PR ($PR_OP): $PR_URL"
           echo "Re-baseline PR ($PR_OP): $PR_URL" >> "$GITHUB_STEP_SUMMARY"
 
+  flaky:
+    # A regression case passes on a majority of its trials, so a skill that
+    # regressed to wrong on 1 trial in 3 passes the gate exactly like a
+    # brittle check does: the runner cannot tell them apart. Both are
+    # reported `flaky`, and the step summary alone is easy to miss, so list
+    # them on a standing issue for a human to read the failed responses.
+    # Advisory: never fails the run, and runs whether or not the evals did.
+    needs: [text, functional]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: text-report
+          path: reports
+        continue-on-error: true
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: functional-report-*
+          path: reports
+          merge-multiple: true
+        continue-on-error: true
+      - name: Comment flaky cases on the nightly-flaky issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          reports=(reports/*.json)
+          if [ "${#reports[@]}" -eq 0 ]; then
+            echo "No eval reports to read."
+            exit 0
+          fi
+          # One line per flaky case: failed trials over all trials, every attempt.
+          flaky="$(jq -r '
+            (input_filename | sub(".*/"; "") | sub("\\.json$"; "")) as $report
+            | .cases[] | select(.flaky)
+            | [(.earlier_attempts // [])[][], .trials[]] as $all
+            | ([$all[] | select(.passed | not)] | length) as $failed
+            | "- `\(.id)` (\($report)): \($failed)/\($all | length) trials failed"
+          ' "${reports[@]}")"
+          if [ -z "$flaky" ]; then
+            echo "No flaky cases."
+            exit 0
+          fi
+          gh label create nightly-flaky --repo "$GITHUB_REPOSITORY" \
+            --color FBCA04 --description "Nightly eval case passing with failed trials" 2>/dev/null || true
+          body="$(printf 'Flaky cases in this run. Each passed the gate with failed trials: either a brittle check or a partial skill regression. Read the failed responses in the report artifacts; the step summary lists which checks failed.\n\n%s\n\nRun: %s' \
+            "$flaky" "$RUN_URL")"
+          existing="$(gh issue list --repo "$GITHUB_REPOSITORY" --state open \
+            --label nightly-flaky --json number --jq '.[0].number // empty')"
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --repo "$GITHUB_REPOSITORY" --body "$body"
+          else
+            gh issue create --repo "$GITHUB_REPOSITORY" \
+              --title "nightly-evals flaky cases" --body "$body" --label nightly-flaky
+          fi
+
   notify:
     # Open or update a single tracking issue when a blocking nightly job
     # fails, and post the same to Slack. obsolescence is continue-on-error,

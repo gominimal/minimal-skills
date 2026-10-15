@@ -10,6 +10,7 @@ import argparse
 import json
 import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -116,6 +117,92 @@ class ResultClassificationTest(unittest.TestCase):
         detail = record.get("infra_error_detail", "")
         self.assertIn("error_during_execution", detail)
         self.assertIn("API Error: 529 overloaded", detail)
+
+
+def _trial(passed: bool, checks: dict | None = None, **extra) -> dict:
+    return {"passed": passed, "trigger_ok": True, "checks": checks or {},
+            "asserts": [], **extra}
+
+
+class CasePassTest(unittest.TestCase):
+    def test_regression_passes_on_a_strict_majority_of_trials(self) -> None:
+        self.assertTrue(runner.case_pass("regression", [_trial(True)] * 2 + [_trial(False)]))
+        self.assertFalse(runner.case_pass("regression", [_trial(True)] + [_trial(False)] * 2))
+        self.assertTrue(runner.case_pass("regression", [_trial(True)]))
+        self.assertFalse(runner.case_pass("regression", [_trial(False)]))
+        self.assertFalse(runner.case_pass("regression", [_trial(True), _trial(False)]))
+
+    def test_capability_still_passes_at_half(self) -> None:
+        self.assertTrue(runner.case_pass("capability", [_trial(True), _trial(False)]))
+
+
+class SummaryTest(unittest.TestCase):
+    def test_summary_counts_each_failing_check_across_trials(self) -> None:
+        case = {
+            "id": "fixture-001", "skill": "minimal-config", "suite": "regression",
+            "passed": True, "flaky": True, "attempts": 1,
+            "trials": [
+                _trial(True, {"response_matches": True}),
+                _trial(False, {"response_matches": False}),
+                _trial(False, {"response_matches": False}, reason="max_turns"),
+            ],
+        }
+        summary = runner.render_summary(
+            [case], {"regression_pass_rate": 1.0, "capability_pass_rate": None}
+        )
+        self.assertIn("**Flaky (1):** fixture-001", summary)
+        self.assertIn("- fixture-001: response_matches (2/3), max_turns (1/3)", summary)
+
+    def test_report_keeps_the_trials_of_failed_attempts(self) -> None:
+        outcomes = iter([False, False, True, True, True, True])
+        case = {**CASE, "suite": "regression", "tier": "text"}
+
+        def fake_trial(skill, case, args, known):
+            return _trial(next(outcomes), {"response_matches": False}, duration_s=0.0)
+
+        with tempfile.TemporaryDirectory() as tmp, \
+                mock.patch.object(runner.shutil, "which", return_value="/bin/claude"), \
+                mock.patch.object(runner, "discover_cases",
+                                  return_value=[("minimal-config", case)]), \
+                mock.patch.object(runner, "known_skill_names", return_value=[]), \
+                mock.patch.object(runner, "run_trial", side_effect=fake_trial):
+            report_path = Path(tmp) / "report.json"
+            code = runner.main(["--trials", "3", "--report", str(report_path)])
+            report = json.loads(report_path.read_text())
+
+        self.assertEqual(code, 0)
+        [reported] = report["cases"]
+        self.assertEqual(reported["attempts"], 2)
+        self.assertTrue(reported["flaky"])
+        self.assertEqual([[t["passed"] for t in a] for a in reported["earlier_attempts"]],
+                         [[False, False, True]])
+        self.assertEqual([t["passed"] for t in reported["trials"]], [True, True, True])
+
+    def test_summary_counts_failures_from_earlier_attempts(self) -> None:
+        case = {
+            "id": "fixture-002", "skill": "minimal-config", "suite": "regression",
+            "passed": True, "flaky": True, "attempts": 2,
+            "earlier_attempts": [[
+                _trial(True), _trial(False, {"response_matches": False}),
+                _trial(False, {"response_matches": False}),
+            ]],
+            "trials": [_trial(True)] * 3,
+        }
+        summary = runner.render_summary(
+            [case], {"regression_pass_rate": 1.0, "capability_pass_rate": None}
+        )
+        self.assertIn("- fixture-002: response_matches (2/6)", summary)
+
+    def test_trial_failures_names_trigger_and_asserts(self) -> None:
+        trial = _trial(False, asserts=[{"command": "min check", "ok": False}],
+                       trigger_ok=False)
+        self.assertEqual(runner.trial_failures(trial), ["assert `min check`", "trigger"])
+        self.assertEqual(runner.trial_failures(_trial(True)), [])
+
+    def test_trial_failures_does_not_blame_an_ungraded_trigger(self) -> None:
+        for reason in ("timeout", "infra_error"):
+            trial = _trial(False, trigger_ok=False, reason=reason)
+            self.assertEqual(runner.trial_failures(trial), [reason])
 
 
 if __name__ == "__main__":

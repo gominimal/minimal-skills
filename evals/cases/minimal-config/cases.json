@@ -279,7 +279,8 @@
       "Skill",
       "Read",
       "Write",
-      "Edit"
+      "Edit",
+      "WebFetch"
     ],
     "expected_checks": [
       {

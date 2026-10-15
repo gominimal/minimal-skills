@@ -208,7 +208,7 @@
     "allowed_tools": ["Skill"],
     "expected_checks": [
       { "name": "response_matches", "args": { "pattern": "min diag upload|--upload" } },
-      { "name": "response_matches", "args": { "pattern": "no (account|token|login|sign.?in|credential)|without (an? )?(account|token)|(token|account)[^\\n.]{0,20}\\b(not|isn'?t|is never) (needed|required)|nothing (that )?identif" } },
+      { "name": "response_matches", "args": { "pattern": "\\bno (?:account|token|login|sign.?in|credential|authentication)|\\bwithout (?:an? )?(?:account|token|login)|\\b(?:do not|don'?t|does not|doesn'?t|never) (?:need|require)s? (?:an? |any )?(?:github |personal |access |user )*(?:account|token|login)|(?:token|account|login)s?\\b[^\\n.]{0,30}\\b(?:not|isn'?t|aren'?t|never) (?:needed|required)|\\bunauthenticated|\\bneeds? no (?:account|token|login|authentication)" } },
       { "name": "response_not_matches", "args": { "pattern": "^(?![^\\n]*\\b(?:not|never|no|don'?t|doesn'?t|without|skip|nor)\\b)[^\\n]*(?:gh auth login|GITHUB_TOKEN|(?:needs?|requires?) (?:a |an |the )?(?:github |personal |access |user )*token)" } }
     ],
     "functional_asserts": []
