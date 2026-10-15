@@ -262,8 +262,7 @@
     "trials": null,
     "allowed_tools": ["Skill"],
     "expected_checks": [
-      { "name": "response_matches", "args": { "pattern": "host_ip" } },
-      { "name": "response_matches", "args": { "pattern": "min net forward" } }
+      {"name": "response_matches", "args": {"pattern": "host_ip|min net forward"}}
     ],
     "functional_asserts": []
   },

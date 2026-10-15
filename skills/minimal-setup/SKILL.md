@@ -110,8 +110,6 @@ use minimal-networking.
 - `min stop` shuts down the daemon. Sessions survive it and are re-hosted by
   the next `min` command. `min stop --force` also stops a VM whose daemon no
   longer answers; unflushed data in the VM can be lost.
-- `--network`, egress rules and published ports are chosen at activation and
-  belong to the minimal-networking skill; do not add them unless asked.
 
 For the in-sandbox `min` helper commands available inside a session, link
 https://minimal.dev/docs/reference/sandbox-operations
