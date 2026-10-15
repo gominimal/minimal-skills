@@ -108,7 +108,7 @@ Named (no args):
 | `no_hidden_flag_leak` | response does NOT recommend `--network` or `--ingress` (use on setup/config cases, where volunteering a network mode is scope creep; networking cases simply omit it) |
 | `no_host_package_manager` | no command line invokes a host package-manager install (apt/apk/dnf/yum/brew install, system pip install, global npm install, cargo install), including forms carrying options such as `apt-get -y install` |
 | `routes_to_sandbox_reference` | response resolves the in-sandbox command surface from a live source: run bare `min`, cite the sandbox-operations reference, or explicitly decline to guess a verb when no shell is available to check with. Prefer this over asserting specific `min` syntax, which changes between daemon releases |
-| `no_host_only_commands` | response does NOT mention host-only Minimal commands (`min session/init/ls/stop/bug/diag/loadout/update/net/finalize-install/dash`, any `mip` invocation including `mip --help`); blunt whole-text scan, use only on cases where a host command is never warranted. Citing the `cli-mip` reference URL is not an invocation and does not fail |
+| `no_host_only_commands` | response does NOT mention host-only Minimal commands (`min session/init/ls/stop/bug/diag/loadout/update/finalize-install/dash`, `min net forward`, any `mip` invocation; the in-sandbox `min net expose` passes including `mip --help`); blunt whole-text scan, use only on cases where a host command is never warranted. Citing the `cli-mip` reference URL is not an invocation and does not fail |
 
 Case authors: use this vocabulary only. A case needing a new named check adds
 it to this table in the same change that implements it in `checks.py`.

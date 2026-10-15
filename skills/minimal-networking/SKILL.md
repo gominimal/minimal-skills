@@ -37,10 +37,11 @@ Choose by what the user already has:
   foreground until Ctrl-C. Offer this first.
 - **`host_ip` session:** the name route also works with no reactivation.
   `<name>.min.internal` resolves through the HTTP proxy whose address the
-  activation `names:` line and `min ls` print (`127.0.0.1:7654` unless that
-  port was busy). `curl -x http://127.0.0.1:7654 http://<name>.min.internal:<port>/`,
-  or a browser with `--proxy-server=http://127.0.0.1:7654`. After
-  `min finalize-install` the name resolves in every program with no proxy.
+  activation `names:` line and `min ls` print; call it `<proxy>` below. It is
+  `127.0.0.1:7654` unless that port was busy, so read it rather than assume
+  it. `curl -x http://<proxy> http://<name>.min.internal:<port>/`, or a
+  browser with `--proxy-server=http://<proxy>`. After `min finalize-install`
+  the name resolves in every program with no proxy.
 - **`own_ip` session:** publish ports. `--ingress <ext>:<int>` at activation
   puts the port on `127.0.0.1:<ext>` on the host; the server must bind all
   addresses (`0.0.0.0`, `--host` for Vite and Astro). `--dynamic-ingress allow
@@ -81,7 +82,7 @@ host.
 - Peer sessions resolve by name inside a session: `curl
   http://<peer>.min.internal:<port>/` from a `host_ip` session reaches a
   `host_ip` peer or an `own_ip` peer's listener directly, whatever that peer's
-  egress rules say. The proxy route (`-x http://127.0.0.1:7654`) works too for
+  egress rules say. The proxy route (`-x http://<proxy>`) works too for
   `host_ip` peers and published `own_ip` ports.
 - From an `own_ip` session on macOS, `host.min.internal` and the host-side
   proxy did not answer in the 0.7.0 verification, even with `--allow-subnets

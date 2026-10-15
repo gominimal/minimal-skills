@@ -237,7 +237,7 @@
     "allowed_tools": ["Skill"],
     "expected_checks": [
       { "name": "response_matches", "args": { "pattern": "sign(s|ed)? in|starts? (the|a) diagnosis|not automatic|someone" } },
-      { "name": "response_not_matches", "args": { "pattern": "poll(ing)? (the|every|it|for)[^\\n]{0,40}(status|JSON|seconds)|/diag/api/" } }
+      { "name": "response_not_matches", "args": { "pattern": "(?<!not )(?<!n't )(?<!never )(?<!no )(?<!nothing to )(?<!needn't )(?<!need to )(?<!reason to )(?<![\\w'])(yes,? poll|should poll|(can|could|may) poll|poll(ing)? (it|the (status|report|url)|every|until|for (the|a|it))|keep polling|polling loop|while\\b[^\\n]{0,40}\\bsleep)|/diag/api/" } }
     ],
     "functional_asserts": []
   }

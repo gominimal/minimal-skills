@@ -47,7 +47,8 @@ _HOST_INSTALLER_RE = re.compile(
 # only a hyphen, which keeps the docs slug `.../reference/cli-mip` from
 # reading as an invocation; citing the reference is not running it.
 _HOST_ONLY_MIN_RE = re.compile(
-    r"\bmin\s+(?:session|init|ls|stop|bug|diag|loadout|update|net|finalize-install|dash)\b|(?<![\w-])mip\b",
+    r"\bmin\s+(?:session|init|ls|stop|bug|diag|loadout|update|finalize-install|dash)\b"
+    r"|\bmin\s+net\s+forward\b|(?<![\w-])mip\b",
     re.IGNORECASE,
 )
 
@@ -250,9 +251,11 @@ def routes_to_sandbox_reference(args: dict, result: Result) -> bool:
 
 def no_host_only_commands(args: dict, result: Result) -> bool:
     """Response does NOT reach for host-only Minimal commands (`min session`,
-    `min init`, `min ls`, `min stop`, `min bug`, `min loadout`, `min update`,
-    or any `mip` invocation). Blunt whole-text scan; use it only on cases
-    where mentioning a host command is never warranted."""
+    `min init`, `min ls`, `min stop`, `min bug`, `min diag`, `min loadout`,
+    `min update`, `min finalize-install`, `min dash`, `min net forward`, or
+    any `mip` invocation). `min net expose` is an in-sandbox verb and passes.
+    Blunt whole-text scan; use it only on cases where mentioning a host
+    command is never warranted."""
     return _HOST_ONLY_MIN_RE.search(result.response_text) is None
 
 
