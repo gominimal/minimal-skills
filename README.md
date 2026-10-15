@@ -101,14 +101,17 @@ justfile              local dev-loop recipes
   [#623](https://github.com/gominimal/inbox/issues/623) and
   [#624](https://github.com/gominimal/inbox/issues/624) in gominimal/inbox.
 - `minimal-networking` is link-first since 0.7.0, when the cli-min and tasks
-  references gained the networking surface. Two places where the running
-  0.7.0-rc2 and the published docs disagree are recorded inline rather than
-  linked: `--dynamic-ingress allow` works on a macOS host, and an `own_ip`
-  session on macOS does not reach `host.min.internal` or the host-side proxy.
-  Filed as
-  [#1093](https://github.com/gominimal/inbox/issues/1093),
-  [#1094](https://github.com/gominimal/inbox/issues/1094) and
-  [#1095](https://github.com/gominimal/inbox/issues/1095) in gominimal/inbox.
+  references gained the networking surface. Where the running 0.7.0-rc2 and
+  the published docs part ways, the skill records the running behaviour
+  inline. Each gap is filed in gominimal/inbox:
+  - `--dynamic-ingress allow` works on a macOS host, though cli-min says a
+    VM-backed host refuses it:
+    [#1093](https://github.com/gominimal/inbox/issues/1093).
+  - The sandbox-operations page does not list `min net expose`:
+    [#1094](https://github.com/gominimal/inbox/issues/1094).
+  - An `own_ip` session on macOS does not reach `host.min.internal` or the
+    host-side proxy, though the release notes say it does:
+    [#1095](https://github.com/gominimal/inbox/issues/1095).
 - Sandboxed Claude Code sessions get this content through the
   `claude-code-minimal-plugin` package in `gominimal/pkgs`, which fetches a
   tagged snapshot of this repo and assembles `skills/minimal-sandbox/` plus
