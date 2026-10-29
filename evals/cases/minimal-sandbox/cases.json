@@ -263,5 +263,21 @@
       }
     ],
     "functional_asserts": []
+  },
+  {
+    "id": "sandbox-016",
+    "prompt": "My shell is in /workbench and /usr/bin/min exists. `rg: command not found`. How do I get ripgrep?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "capability",
+    "trials": null,
+    "allowed_tools": [
+      "Skill"
+    ],
+    "expected_checks": [
+      "no_host_package_manager",
+      "routes_to_sandbox_reference"
+    ],
+    "functional_asserts": []
   }
 ]
