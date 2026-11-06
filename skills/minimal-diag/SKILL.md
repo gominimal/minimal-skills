@@ -1,6 +1,6 @@
 ---
 name: minimal-diag
-description: Use when Minimal itself is broken or misbehaving and the user wants to report a bug, collect diagnostics, or send an existing bundle for diagnosis, e.g. Minimal is broken, a min session won't start, the minimald daemon is unreachable, a VM boot hangs, or the user has a minimal-diag bundle to send or upload, and the user mentions Minimal. Do not use for session names that do not resolve or ports that are not published (minimal-networking), for a daemon that fails to start only when several commands run at once (minimal-setup), for general debugging of the user's own application, or for bug reports about non-Minimal software.
+description: Use when Minimal itself is broken or misbehaving and the user wants to report a bug, report a suspected vulnerability in Minimal, collect diagnostics, or send an existing bundle for diagnosis, e.g. Minimal is broken, a min session won't start, the minimald daemon is unreachable, a VM boot hangs, or the user has a minimal-diag bundle to send or upload, and the user mentions Minimal. Do not use for session names that do not resolve or ports that are not published (minimal-networking), for a daemon that fails to start only when several commands run at once (minimal-setup), for general debugging of the user's own application, or for bug reports about non-Minimal software.
 ---
 
 # minimal-diag
@@ -32,6 +32,8 @@ exist inside a sandbox; from a session, have the user run it on the host
 - `--upload`: also send the bundle for a diagnosis (see below). The bundle is
   written to disk first either way, so a failed upload never costs the
   collection.
+- `--security`: with `--upload`, send it as a security report (see "Reporting
+  a suspected vulnerability"). Without `--upload` it is refused.
 
 ## Always safe to run
 
@@ -67,8 +69,9 @@ Delete:  min diag delete <id> <token>
 ```
 
 Paste the report URL into the issue you file. The diagnosis is not automatic:
-a member of the Minimal team signs in at the report URL and starts it, so do
-not poll for a verdict. The bundle expires after 7 days; the `Delete:` line
+any signed-in GitHub account can start one at the report URL, so do not poll
+for a verdict. A security report needs a portal owner to start it. The bundle
+expires after 7 days; the `Delete:` line
 removes it sooner, and it is the only place the delete token appears, so keep
 it if the user may want the bundle gone.
 
@@ -104,12 +107,33 @@ Uploading sends the bundle off the machine, which collecting it does not.
 The archive is the same either way, with secret-shaped values redacted and
 file contents never included, but confirm with the user before uploading a
 bundle from a machine you were not asked to diagnose. Anyone with the report
-URL can read the report.
+URL can read an ordinary report.
+
+## Reporting a suspected vulnerability
+
+Never put a suspected vulnerability in a public issue, and never attach its
+bundle or report URL to one. Tell the user to email security@minimal.dev, or,
+when the report comes with a diagnostics bundle, to add `--security`:
+
+```
+min bug --upload --security --context "what you found"
+min diag upload minimal-diag-20260913T175713Z.tar.zst --security --context "..."
+```
+
+Only portal owners can read a security report. Its description is never
+public, it is never filed to public GitHub, and the results go to a private
+channel. The command prints a `Receipt:` URL instead of `Report:`. That page
+only confirms receipt and will not change, so do not poll it. Nobody can reply
+through it: to hear back, the user emails security@minimal.dev with the id.
+
+Never drop `--security` to get an upload through. If `min` rejects the flag or
+the upload fails, send the report by email. On the page at
+https://agents.minimal.farm/diag, tick the security disclosure box first.
 
 ## Reporting
 
-A report URL is the useful thing to attach to an issue. When you cannot
-upload, tell users to attach the bundle itself when reporting the issue to the
+For an ordinary bug, a report URL is the useful thing to attach to an issue.
+When you cannot upload, tell users to attach the bundle itself when reporting the issue to the
 Minimal dev team.
 
 ## Out of scope

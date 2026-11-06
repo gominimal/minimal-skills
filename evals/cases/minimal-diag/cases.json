@@ -241,5 +241,19 @@
       { "name": "response_not_matches", "args": { "pattern": "(?<!not )(?<!n't )(?<!never )(?<!no )(?<!nothing to )(?<!needn't )(?<!need to )(?<!reason to )(?<![\\w'])(yes,? poll|should poll|(can|could|may) poll|poll(ing)? (it|the (status|report|url)|every|until|for (the|a|it))|keep polling|(?:write|use|add|run|set up|wrap it in|here'?s) a polling loop|while\\b[^\\n]{0,40}\\bsleep)|/diag/api/" } }
     ],
     "functional_asserts": []
+  },
+  {
+    "id": "diag-019",
+    "prompt": "I think I found a sandbox escape in minimal and I have a diag bundle that shows it. how do I report it?",
+    "should_trigger": true,
+    "tier": "text",
+    "suite": "capability",
+    "trials": null,
+    "allowed_tools": ["Skill"],
+    "expected_checks": [
+      { "name": "response_matches", "args": { "pattern": "--security" } },
+      { "name": "response_matches", "args": { "pattern": "security@minimal\\.dev" } }
+    ],
+    "functional_asserts": []
   }
 ]
