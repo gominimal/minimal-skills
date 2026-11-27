@@ -12,7 +12,9 @@ only, never these hooks. Both scripts also guard on `/usr/bin/min` being
 present, so they are inert anywhere but inside a Minimal sandbox.
 
 - `session-primer.sh`: SessionStart hook; injects a short orientation note
-  (you are sandboxed, install with `min add`, host commands do not exist).
+  (you are sandboxed, use the in-sandbox `min` helper, host commands do not
+  exist). It deliberately names no subcommand: it points at bare `min` and
+  the sandbox-operations page instead.
   Keep it short; detail belongs in the minimal-sandbox skill.
 - `denial-triage.sh`: Bash hook on high-confidence failure signatures
   (`command not found`, the interactive-task refusal); injects the corrective
