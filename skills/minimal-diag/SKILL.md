@@ -36,7 +36,9 @@ exist inside a sandbox; from a session, have the user run it on the host
 ## Always safe to run
 
 `min bug` works even when no daemon is running and never starts one, and it
-mutates no state. Run it on any broken install; a failed collector becomes an
+changes no session, VM or config state. From 0.7.4 its only write outside the
+bundle is the daily update check's `update-check.json` in the state
+directory, which `MINIMAL_TELEMETRY=0` prevents. Run it on any broken install; a failed collector becomes an
 entry in the bundle's `manifest.json`, not a failed run.
 
 ## What is in the bundle, and privacy

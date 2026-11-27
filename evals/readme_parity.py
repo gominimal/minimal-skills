@@ -21,14 +21,15 @@ from pathlib import Path
 
 TIMEOUT_S = 30
 DEFAULT_README_URL = (
-    "https://raw.githubusercontent.com/gominimal/minimal/main/README.md"
+    "https://raw.githubusercontent.com/gominimal/minimal/release/0.7.x/README.md"
 )
 # Anchored to the repository, not the caller's working directory, so the
 # check behaves the same from `evals/`, the repo root, or CI.
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_SKILL_PATH = str(REPO_ROOT / "skills" / "minimal-setup" / "SKILL.md")
-# This check's whole claim is "the README on gominimal/minimal main still
-# lists these commands". Fetching (or following a redirect to) anything else
+# This check's whole claim is "the README on the gominimal/minimal branch the
+# skills target (release/0.7.x while they teach stable 0.7; main already
+# documents the 0.8 verbs) still lists these commands". Fetching (or following a redirect to) anything else
 # would compare the skill against a document it never actually read.
 ALLOWED_URL_PREFIX = "https://raw.githubusercontent.com/gominimal/minimal/"
 

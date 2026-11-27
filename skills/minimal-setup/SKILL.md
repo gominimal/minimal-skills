@@ -34,6 +34,19 @@ resolve only through the proxy (minimal-networking). `--show` lists what is
 missing and runs nothing, `--show --script` prints the script, `--undo`
 removes it all. Details on the cli-min reference above.
 
+From 0.7.4, `min` checks once a day whether its channel has a newer release,
+sending the channel, version, OS, architecture, install method and a random
+install id to update.minimal.dev. The first short command (`min ls`, `stop`,
+`bug`, ...) run at a terminal prints a one-line notice on stderr saying so.
+It never writes to stdout or changes an exit code. Turn it off with
+`MINIMAL_TELEMETRY=0`; `DO_NOT_TRACK`, `CI` and `OTEL_SDK_DISABLED=true`
+also stop it, as does `[telemetry] enabled = false` in
+`<config>/minimal/config.toml`. Prefer the environment switch on a machine
+that also runs an older `min`, which predates the `[telemetry]` table.
+`min update-check --dry-run` prints the request and which switch, if any,
+stops it. `min update` is unrelated: it re-pins the project's upstream and is
+not a self-update.
+
 ## Onboard a project
 
 1. Run `min init` in the repository root. It detects the stack and scaffolds
@@ -52,8 +65,14 @@ runs skip it with a warning.
 
 A missing `minimal.toml` no longer blocks activation: `min` reports it, gives
 the session a default environment, points at `min init`, and continues
-without writing a file. `--loadout` is validated first, so an unknown loadout
-errors by name even there.
+without writing a file to the host checkout (the session's own workspace gets
+a default `minimal.toml`). `--loadout` is validated first, so an unknown
+loadout errors by name even there.
+
+A `minimal.toml` (or `.minimal`) that is a link leading outside the project,
+or a dangling one, is refused from 0.7.4: activation fails with `it leads
+outside its workspace through a link`. Replace it with a regular file or a
+relative link that stays inside the repository.
 
 ## Providers on Linux
 
@@ -151,7 +170,8 @@ https://minimal.dev/docs/reference/sandbox-operations
   packages onto PATH, its output is complete from the first line, argv is
   passed through without re-quoting, and a backgrounded child that inherits
   its stdout does not hold the call open (all three reproduced on released
-  0.5.4; `sh -c 'sleep 8 & echo started'` returns in under a second). Do not
+  0.5.4, the last again on 0.7.4; `sh -c 'sleep 8 & echo started'` returns in
+  under a second). Do not
   build a repeatable pipeline on it; do not avoid it for a single command.
 - Do not fan out concurrent `min` commands from a cold state. With no daemon
   running each client races to autospawn one, and the losers fail with
@@ -160,7 +180,9 @@ https://minimal.dev/docs/reference/sandbox-operations
   winner's session is healthy. Warm the daemon with one `min ls`, then
   parallelize.
 - Read session state with `min session list --json` (or `--raw` for bare ids
-  one per line). Never parse the human-readable table.
+  one per line). Never parse the human-readable table. The daily update
+  check's notice goes to stderr only, so `--json` output stays parseable; set
+  `MINIMAL_TELEMETRY=0` in scripts anyway (`CI` already stops it).
 - `min session attach` opens an interactive shell and takes no command
   argument; use `min session exec` for a one-off command and a task for
   anything repeatable. Confirm any flag against `min session --help` before
@@ -171,7 +193,7 @@ https://minimal.dev/docs/reference/sandbox-operations
   `env_vars.X = { inherit = true }` declaration resolves in the DAEMON's
   environment, failing with `inheriting environment variable 'X':
   environment variable not found` even when `X` is exported in the shell that
-  typed the command (reproduced again on 0.7.0-rc2). `min task run` resolves
+  typed the command (reproduced again on 0.7.0-rc2 and 0.7.4). `min task run` resolves
   the same declaration on the client and works. Until this is fixed, carry
   secrets with `min task run` (task sandbox) or `[session.vars]` at
   activation, never `min session run`.
