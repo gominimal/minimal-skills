@@ -6,7 +6,8 @@ description: Use when previewing a dev server running inside a Minimal session, 
 # Minimal session networking
 
 Every flag and command here is documented; read the reference instead of
-guessing. Verified on 2026-10-14 against min 0.7.0-rc2 (macOS arm64).
+guessing. Verified on 2026-10-14 against min 0.7.0-rc2 and re-checked on
+2026-11-27 against min 0.7.4 (macOS arm64).
 
 | Activity | Reference |
 |---|---|
@@ -40,11 +41,17 @@ Choose by what the user already has:
   activation `names:` line and `min ls` print; call it `<proxy>` below. It is
   `127.0.0.1:7654` unless that port was busy, so read it rather than assume
   it. `curl -x http://<proxy> http://<name>.min.internal:<port>/`, or a
-  browser with `--proxy-server=http://<proxy>`. After `min finalize-install`
-  the name resolves in every program with no proxy.
+  browser with `--proxy-server=http://<proxy>`. Keep the proxy even after
+  `min finalize-install`: a `host_ip` name is held with no address, so a
+  direct lookup gets no answer. Only an `own_ip` session's name resolves in
+  every program.
 - **`own_ip` session:** publish ports. `--ingress <ext>:<int>` at activation
-  puts the port on `127.0.0.1:<ext>` on the host; the server must bind all
-  addresses (`0.0.0.0`, `--host` for Vite and Astro). `--dynamic-ingress allow
+  puts the port on `<address>:<ext>` on the host, where `<address>` is the
+  session's `ADDRESS` in `min ls` (`loopback_address` in `--json`), a
+  `127.0.64.x` address on macOS. It is not `127.0.0.1`, and
+  `127.0.0.1:<ext>` refuses the connection, so read the address from `min ls`.
+  The server must bind all addresses (`0.0.0.0`, `--host` for Vite and
+  Astro). `--dynamic-ingress allow
   --dynamic-range <lo-hi>` lets the session publish later: `min net expose
   <port>` inside it, or any listener inside the range is published on its
   own. Both worked on macOS in the 0.7.0 verification, although the cli-min
@@ -53,8 +60,9 @@ Choose by what the user already has:
   a published port (`<name>.min.internal:<ext>`); any other port answers
   `the box has not published this port`.
 
-Do not tell a user to open `http://127.0.0.1:<port>` on the host unless that
-port was published with `--ingress`, dynamic ingress, or `min net forward`.
+On macOS, do not tell a user to open `http://127.0.0.1:<port>` on the host
+unless that port was forwarded with `min net forward`; a port published with
+`--ingress` or dynamic ingress is on the session's `ADDRESS` shown by `min ls`.
 Every macOS session has its own namespace, so a bare session port is not on the
 host.
 

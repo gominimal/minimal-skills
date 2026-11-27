@@ -88,7 +88,13 @@ justfile              local dev-loop recipes
 - Skills link the published docs at `minimal.dev` instead of restating them;
   the URL contract lives in [evals/SCHEMA.md](evals/SCHEMA.md).
 - Behavior claims are checked against a real install, and anything the
-  reference documents is linked rather than restated. The 0.7.0 pass was
+  reference documents is linked rather than restated. The 0.7.4 pass was
+  verified on 2026-11-27 against min 0.7.4 (macOS arm64): the daily update
+  check and its off switches, `min bug` state writes, the `minimal.toml`
+  link refusal, the box-side default `minimal.toml`, `min session exec`
+  backgrounding and exit 127, the `min session run` environment trap,
+  `min net forward`, the hostname proxy, and the `--ingress` host address.
+  The 0.7.0 pass was
   verified on 2026-10-14 against min 0.7.0-rc2 (macOS arm64): network modes,
   egress defaults, `.min.internal` names, `min net forward`, static and
   dynamic ingress, `min bug --upload` and `min diag delete`, and the
