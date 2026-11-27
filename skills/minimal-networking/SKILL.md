@@ -58,9 +58,9 @@ Choose by what the user already has:
   a published port (`<name>.min.internal:<ext>`); any other port answers
   `the box has not published this port`.
 
-Do not tell a user to open `http://127.0.0.1:<port>` on the host unless that
-port was forwarded with `min net forward`; a port published with `--ingress`
-or dynamic ingress is on the session's `ADDRESS` shown by `min ls`.
+On macOS, do not tell a user to open `http://127.0.0.1:<port>` on the host
+unless that port was forwarded with `min net forward`; a port published with
+`--ingress` or dynamic ingress is on the session's `ADDRESS` shown by `min ls`.
 Every macOS session has its own namespace, so a bare session port is not on the
 host.
 

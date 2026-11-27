@@ -29,8 +29,9 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_SKILL_PATH = str(REPO_ROOT / "skills" / "minimal-setup" / "SKILL.md")
 # This check's whole claim is "the README on the gominimal/minimal branch the
 # skills target (release/0.7.x while they teach stable 0.7; main already
-# documents the 0.8 verbs) still lists these commands". Fetching (or following a redirect to) anything else
-# would compare the skill against a document it never actually read.
+# documents the 0.8 verbs) still lists these commands".
+# Fetching (or following a redirect to) anything else would compare the
+# skill against a document it never actually read.
 ALLOWED_URL_PREFIX = "https://raw.githubusercontent.com/gominimal/minimal/"
 
 _HEADING_RE = re.compile(r"^###[ \t]+(Start in \S+ commands)[ \t]*$", re.MULTILINE)
