@@ -41,8 +41,10 @@ Choose by what the user already has:
   activation `names:` line and `min ls` print; call it `<proxy>` below. It is
   `127.0.0.1:7654` unless that port was busy, so read it rather than assume
   it. `curl -x http://<proxy> http://<name>.min.internal:<port>/`, or a
-  browser with `--proxy-server=http://<proxy>`. After `min finalize-install`
-  the name resolves in every program with no proxy.
+  browser with `--proxy-server=http://<proxy>`. Keep the proxy even after
+  `min finalize-install`: a `host_ip` name is held with no address, so a
+  direct lookup gets no answer. Only an `own_ip` session's name resolves in
+  every program.
 - **`own_ip` session:** publish ports. `--ingress <ext>:<int>` at activation
   puts the port on `<address>:<ext>` on the host, where `<address>` is the
   session's `ADDRESS` in `min ls` (`loopback_address` in `--json`), a
