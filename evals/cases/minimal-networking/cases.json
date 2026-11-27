@@ -248,7 +248,7 @@
     "allowed_tools": ["Skill"],
     "expected_checks": [
       { "name": "response_matches", "args": { "pattern": "0\\.0\\.0\\.0|--host|all (addresses|interfaces)|min net forward" } },
-      { "name": "response_matches", "args": { "pattern": "min net forward|127\\.0\\.64\\.\\d+:18431|(min ls|loopback_address)[\\s\\S]{0,200}18431|18431[\\s\\S]{0,200}(min ls|loopback_address)" } }
+      { "name": "response_matches", "args": { "pattern": "min net forward|(min ls|loopback_address)[\\s\\S]{0,200}18431|18431[\\s\\S]{0,200}(min ls|loopback_address)" } }
     ],
     "functional_asserts": []
   },
