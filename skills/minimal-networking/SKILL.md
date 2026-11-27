@@ -45,11 +45,11 @@ Choose by what the user already has:
   the name resolves in every program with no proxy.
 - **`own_ip` session:** publish ports. `--ingress <ext>:<int>` at activation
   puts the port on `<address>:<ext>` on the host, where `<address>` is the
-  session's `ADDRESS` in `min ls` (`loopback_address` in `--json`). Read it
-  rather than assume `127.0.0.1`: on a macOS host after `min finalize-install`
-  0.7.4 publishes on the VM's `127.0.64.x` address, and `127.0.0.1:<ext>`
-  refuses the connection. The server must bind all addresses (`0.0.0.0`,
-  `--host` for Vite and Astro). `--dynamic-ingress allow
+  session's `ADDRESS` in `min ls` (`loopback_address` in `--json`), a
+  `127.0.64.x` address on macOS. It is not `127.0.0.1`, and
+  `127.0.0.1:<ext>` refuses the connection, so read the address from `min ls`.
+  The server must bind all addresses (`0.0.0.0`, `--host` for Vite and
+  Astro). `--dynamic-ingress allow
   --dynamic-range <lo-hi>` lets the session publish later: `min net expose
   <port>` inside it, or any listener inside the range is published on its
   own. Both worked on macOS in the 0.7.0 verification, although the cli-min

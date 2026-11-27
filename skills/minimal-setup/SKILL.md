@@ -73,8 +73,9 @@ loadout errors by name even there.
 
 A `minimal.toml` (or `.minimal`) that is a link leading outside the project,
 or a dangling one, is refused from 0.7.4: activation fails with `it leads
-outside its workspace through a link`. Replace it with a regular file or a
-relative link that stays inside the repository.
+outside its workspace through a link`. Replace a `minimal.toml` link with a
+regular file, or a `.minimal` link with a directory that holds
+`minimal.toml`. A relative link that stays inside the repository also works.
 
 ## Providers on Linux
 
