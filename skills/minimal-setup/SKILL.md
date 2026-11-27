@@ -41,8 +41,10 @@ install id to update.minimal.dev. The first short command (`min ls`, `stop`,
 It never writes to stdout or changes an exit code. Turn it off with
 `MINIMAL_TELEMETRY=0`; `DO_NOT_TRACK`, `CI` and `OTEL_SDK_DISABLED=true`
 also stop it, as does `[telemetry] enabled = false` in
-`<config>/minimal/config.toml`. Prefer the environment switch on a machine
-that also runs an older `min`, which predates the `[telemetry]` table.
+`<config>/minimal/config.toml`. `min` refuses a whole `config.toml` that
+holds a table it does not know (0.7.4 refuses activation over a newer
+release's table), so prefer the environment switch on a machine that also
+runs an older `min`, which predates `[telemetry]`.
 `min update-check --dry-run` prints the request and which switch, if any,
 stops it. `min update` is unrelated: it re-pins the project's upstream and is
 not a self-update.
@@ -171,8 +173,8 @@ https://minimal.dev/docs/reference/sandbox-operations
   passed through without re-quoting, and a backgrounded child that inherits
   its stdout does not hold the call open (all three reproduced on released
   0.5.4, the last again on 0.7.4; `sh -c 'sleep 8 & echo started'` returns in
-  under a second). Do not
-  build a repeatable pipeline on it; do not avoid it for a single command.
+  under a second). Do not build a repeatable pipeline on it; do not avoid it
+  for a single command.
 - Do not fan out concurrent `min` commands from a cold state. With no daemon
   running each client races to autospawn one, and the losers fail with
   `Failed to ensure the minimald daemon is running: ... the detached
@@ -193,8 +195,8 @@ https://minimal.dev/docs/reference/sandbox-operations
   `env_vars.X = { inherit = true }` declaration resolves in the DAEMON's
   environment, failing with `inheriting environment variable 'X':
   environment variable not found` even when `X` is exported in the shell that
-  typed the command (reproduced again on 0.7.0-rc2 and 0.7.4). `min task run` resolves
-  the same declaration on the client and works. Until this is fixed, carry
+  typed the command (reproduced again on 0.7.0-rc2 and 0.7.4). `min task run`
+  resolves the same declaration on the client and works. Until this is fixed, carry
   secrets with `min task run` (task sandbox) or `[session.vars]` at
   activation, never `min session run`.
 - Commits made in a session's workspace come back to the host checkout with
